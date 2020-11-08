@@ -1,0 +1,27 @@
+set(REQUIRED_TEST_TARGETS "")
+macro(make_test name file)
+add_executable(test_${name}_runner
+	${file}
+)
+target_include_directories(test_${name}_runner
+	PUBLIC
+	${PROJECT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/src
+	${PROJECT_SOURCE_DIR}/test
+	${PROJECT_BINARY_DIR}
+)
+target_link_libraries(test_${name}_runner
+	# TODO link libraries
+	GTest::GTest
+)
+gtest_discover_tests(
+	test_${name}_runner
+	# PROPERTIES ENVIRONMENT KEY=value
+)
+set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} test_${name}_runner)
+endmacro()
+
+## TODO insert tests
+
+set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} PARENT_SCOPE)
+
