@@ -27,3 +27,6 @@ Outputs have not yet been reverse engineered.
 ## Useful links
   * https://en.wikipedia.org/wiki/USB_human_interface_device_class
   * https://www.linuxjournal.com/article/8145
+  * https://www.usb.org/sites/default/files/hid1_11.pdf
+  * https://www.usb.org/sites/default/files/hut1_21.pdf
+  * https://www.kernel.org/doc/html/latest/hid/hidraw.html
