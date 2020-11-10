@@ -33,9 +33,9 @@ public:
 	    : server_thread(nullptr), server_uri(server_thread.url())
 	{
 		server_thread.add_method(
-		  "/nsm/client/announce", "ssii",
+		  NonSessionHandler::NSM_ANNOUNCE, "sssiii",
 		  [this](lo::Message msg) {
-			  received_messages.push({"/nsm/client/announce", msg});
+			  received_messages.push({NonSessionHandler::NSM_ANNOUNCE, msg});
 		  },
 		  nullptr);
 		server_thread.add_method("/reply", "ss", [this](lo::Message msg) {
@@ -50,10 +50,10 @@ public:
 	{
 		nsh.start_session();
 		short_sleep<>();
-		debug("Sending /reply /nsm/server/announce to "
+		debug("Sending /reply announce to "
 		      + static_cast<lo::Address>(nsh).url() + '\n');
 		lo::Address{nsh}.send_from(server_thread, "/reply", "sss",
-		                           "/nsm/server/announce",
+		                           NonSessionHandler::NSM_ANNOUNCE,
 		                           "name_of_session_manager", "capbilities");
 		short_sleep<>();
 	}
@@ -79,14 +79,14 @@ TEST(NonSessionHandler, sends_announce_on_session_start)
 
 	auto& announce_message = srv.received_messages.top();
 
-	ASSERT_EQ("/nsm/client/announce", announce_message.first);
-	ASSERT_EQ("ssii", announce_message.second.types());
+	ASSERT_EQ(NonSessionHandler::NSM_ANNOUNCE, announce_message.first);
+	ASSERT_EQ("sssiii", announce_message.second.types());
 
 	auto** args = announce_message.second.argv();
 	ASSERT_EQ(std::string{"/invalid/path/exe"},
-	          reinterpret_cast<const char*>(&args[0]->s));
-	ASSERT_EQ(NonSessionHandler::NON_API_VERSION_MAJOR, args[2]->i);
-	ASSERT_EQ(NonSessionHandler::NON_API_VERSION_MINOR, args[3]->i);
+	          reinterpret_cast<const char*>(&args[2]->s));
+	ASSERT_EQ(NonSessionHandler::NON_API_VERSION_MAJOR, args[3]->i);
+	ASSERT_EQ(NonSessionHandler::NON_API_VERSION_MINOR, args[4]->i);
 }
 
 TEST(NonSessionHandler, is_running_after_successful_announce_handshake)
@@ -96,10 +96,10 @@ TEST(NonSessionHandler, is_running_after_successful_announce_handshake)
 	nsh.start_session();
 	short_sleep<>();
 
-	debug("Sending /reply /nsm/server/announce to "
-	      + static_cast<lo::Address>(nsh).url() + '\n');
+	debug("Sending /reply announce to " + static_cast<lo::Address>(nsh).url()
+	      + '\n');
 	lo::Address{nsh}.send_from(srv.server_thread, "/reply", "sss",
-	                           "/nsm/server/announce",
+	                           NonSessionHandler::NSM_ANNOUNCE,
 	                           "name_of_session_manager", "capabilities");
 
 	short_sleep<>();
@@ -113,10 +113,11 @@ TEST(NonSessionHandler, is_failed_after_failed_handshake)
 	nsh.start_session();
 	short_sleep<>();
 
-	debug("Sending /error /nsm/server/announce to "
-	      + static_cast<lo::Address>(nsh).url() + '\n');
+	debug("Sending /error announce to " + static_cast<lo::Address>(nsh).url()
+	      + '\n');
 	lo::Address{nsh}.send_from(srv.server_thread, "/error", "sis",
-	                           "/nsm/server/announce", -1, "my error message");
+	                           NonSessionHandler::NSM_ANNOUNCE, -1,
+	                           "my error message");
 
 	short_sleep<>();
 	ASSERT_FALSE(nsh.session_is_running());
@@ -129,13 +130,14 @@ TEST(NonSessionHandler, replies_to_open_command)
 	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe");
 	srv.prepare_session(nsh);
 
-	debug("Sending /nsm/client/open\n");
-	lo::Address{nsh}.send_from(srv.server_thread, "/nsm/client/open", "sss",
-	                           "projectpath", "display_name", "client_id");
+	debug("Sending open\n");
+	lo::Address{nsh}.send_from(srv.server_thread, NonSessionHandler::NSM_OPEN,
+	                           "sss", "projectpath", "display_name",
+	                           "client_id");
 	short_sleep<>();
 	ASSERT_EQ(2, srv.received_messages.size());
 	auto& open_reply = srv.received_messages.top();
-	ASSERT_EQ(std::string{"/nsm/client/open"},
+	ASSERT_EQ(std::string{NonSessionHandler::NSM_OPEN},
 	          reinterpret_cast<const char*>(&open_reply.second.argv()[0]->s));
 }
 
@@ -145,11 +147,13 @@ TEST(NonSessionHandler, replies_to_save_command)
 	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe");
 	srv.prepare_session(nsh);
 
-	debug("Sending /nsm/client/save");
-	lo::Address{nsh}.send_from(srv.server_thread, "/nsm/client/save", "");
+	debug("Sending save");
+	lo::Address{nsh}.send_from(srv.server_thread, NonSessionHandler::NSM_SAVE,
+	                           "");
 	short_sleep<>();
+
 	ASSERT_EQ(2, srv.received_messages.size());
 	auto& save_reply = srv.received_messages.top();
-	ASSERT_EQ(std::string{"/nsm/client/save"},
+	ASSERT_EQ(std::string{NonSessionHandler::NSM_SAVE},
 	          reinterpret_cast<const char*>(&save_reply.second.argv()[0]->s));
 }

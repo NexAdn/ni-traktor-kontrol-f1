@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "NonSessionHandler.hpp"
 
 #include "debug.hpp"
@@ -7,12 +9,12 @@ void NonSessionHandler::handle_reply(std::string_view path,
                                      std::string_view arg1,
                                      std::string_view arg2)
 {
-	if (path == "/nsm/server/announce") {
-		debug("Received /nsm/server/announce\n");
+	if (path == NSM_ANNOUNCE) {
+		debug("Received announce reply\n");
 		if (session_state == State::HANDSHAKE_AWAIT_REPLY) {
 			handshake_complete = true;
 
-			debug("handle_repley(): Step state machine\n");
+			debug("handle_reply(): Step state machine\n");
 			step_state_machine();
 		} else {
 			debug("State transition: FAILED\n");
@@ -28,7 +30,7 @@ template <>
 void NonSessionHandler::handle_error(std::string_view path, int32_t error_code,
                                      std::string_view message)
 {
-	if (path == "/nsm/server/announce") {
+	if (path == NSM_ANNOUNCE) {
 		debug(std::string{"Received NSM session failure with error "}
 		      + std::to_string(error_code) + " and message " + message.data());
 		handshake_complete = false;
@@ -136,8 +138,8 @@ void NonSessionHandler::register_callbacks()
 		std::string_view message = reinterpret_cast<const char*>(&argv[2]->s);
 		handle_error(path, error_code, message);
 	});
-	s2c_thread.add_method("/nsm/client/open", "sss", [this](lo::Message msg) {
-		debug("Received /nsm/client/open\n");
+	s2c_thread.add_method(NSM_OPEN, "sss", [this](lo::Message msg) {
+		debug(std::string{"Received "} + NSM_OPEN + '\n');
 		auto** argv = msg.argv();
 		std::string_view project_path =
 		  reinterpret_cast<const char*>(&argv[0]->s);
@@ -146,18 +148,19 @@ void NonSessionHandler::register_callbacks()
 		std::string_view client_id = reinterpret_cast<const char*>(&argv[2]->s);
 		handle_open(project_path, display_name, client_id);
 	});
-	s2c_thread.add_method("/nsm/client/save", "sss", [this](lo::Message msg) {
-		debug("Received /nsm/client/save\n");
+	s2c_thread.add_method(NSM_SAVE, "", [this](lo::Message msg) {
+		debug(std::string{"Received "} + NSM_SAVE + '\n');
 		handle_save();
 	});
 }
 
 void NonSessionHandler::send_announce()
 {
-	debug("send_announce(): Sending /nsm/client/announce\n");
-	c2s_addr.send_from(s2c_thread, "/nsm/client/announce", "ssii",
-	                   executable_name.data(), "FIXME", NON_API_VERSION_MAJOR,
-	                   NON_API_VERSION_MINOR);
+	debug(std::string{"send_announce(): Sending "} + NSM_ANNOUNCE + '\n');
+	c2s_addr.send_from(s2c_thread, NSM_ANNOUNCE, "sssiii",
+	                   "application-name-FIXME", "", executable_name.data(),
+	                   NON_API_VERSION_MAJOR, NON_API_VERSION_MINOR,
+	                   ::getpid());
 }
 
 void NonSessionHandler::handle_open(std::string_view project_path,
@@ -166,12 +169,12 @@ void NonSessionHandler::handle_open(std::string_view project_path,
 {
 	// We have nothing so save, so we have nothing to open
 	debug("NonSessionHandler::handle_open(): Sending /reply\n");
-	c2s_addr.send_from(s2c_thread, "/reply", "ss", "/nsm/client/open", "NOP");
+	c2s_addr.send_from(s2c_thread, "/reply", "ss", NSM_OPEN, "NOP");
 }
 
 void NonSessionHandler::handle_save()
 {
 	// We have nothing to save
 	debug("NonSessionHandler::handle_save(): Sending /reply\n");
-	c2s_addr.send_from(s2c_thread, "/reply", "ss", "/nsm/client/save", "NOP");
+	c2s_addr.send_from(s2c_thread, "/reply", "ss", NSM_SAVE, "NOP");
 }

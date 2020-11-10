@@ -9,14 +9,16 @@
 
 #include <lo/lo_cpp.h>
 
-#include "debug.hpp"
-
 class NonSessionHandler
 {
 public:
 	constexpr static int NON_API_VERSION_MAJOR{1};
 	constexpr static int NON_API_VERSION_MINOR{2};
 	constexpr static std::chrono::seconds SESSION_HANDSHAKE_TIMEOUT{5};
+
+	constexpr static const char* NSM_ANNOUNCE{"/nsm/server/announce"};
+	constexpr static const char* NSM_OPEN{"/nsm/client/open"};
+	constexpr static const char* NSM_SAVE{"/nsm/client/save"};
 
 	enum class State : int
 	{
