@@ -5,3 +5,9 @@ target_link_libraries(debug
 	f1hid
 	Threads::Threads
 )
+add_executable(nsm_test
+	nsm_test.cpp
+)
+target_link_libraries(nsm_test
+	nonsession
+)

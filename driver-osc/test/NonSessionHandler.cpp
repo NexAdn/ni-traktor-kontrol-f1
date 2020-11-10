@@ -52,9 +52,10 @@ public:
 		short_sleep<>();
 		debug("Sending /reply announce to "
 		      + static_cast<lo::Address>(nsh).url() + '\n');
-		lo::Address{nsh}.send_from(server_thread, "/reply", "sss",
-		                           NonSessionHandler::NSM_ANNOUNCE,
-		                           "name_of_session_manager", "capbilities");
+		lo::Address{nsh}.send_from(
+		  server_thread, "/reply", "ssss", NonSessionHandler::NSM_ANNOUNCE,
+		  "hello", "name_of_session_manager",
+		  NonSessionHandler::NSM_REQUIRED_SERVER_CAPABILITIES);
 		short_sleep<>();
 	}
 
@@ -83,6 +84,10 @@ TEST(NonSessionHandler, sends_announce_on_session_start)
 	ASSERT_EQ("sssiii", announce_message.second.types());
 
 	auto** args = announce_message.second.argv();
+	ASSERT_EQ(std::string{NonSessionHandler::NSM_CLIENT_NAME},
+	          reinterpret_cast<const char*>(&args[0]->s));
+	ASSERT_EQ(std::string{NonSessionHandler::NSM_CLIENT_CAPABILITIES},
+	          reinterpret_cast<const char*>(&args[1]->s));
 	ASSERT_EQ(std::string{"/invalid/path/exe"},
 	          reinterpret_cast<const char*>(&args[2]->s));
 	ASSERT_EQ(NonSessionHandler::NON_API_VERSION_MAJOR, args[3]->i);
@@ -98,9 +103,10 @@ TEST(NonSessionHandler, is_running_after_successful_announce_handshake)
 
 	debug("Sending /reply announce to " + static_cast<lo::Address>(nsh).url()
 	      + '\n');
-	lo::Address{nsh}.send_from(srv.server_thread, "/reply", "sss",
-	                           NonSessionHandler::NSM_ANNOUNCE,
-	                           "name_of_session_manager", "capabilities");
+	lo::Address{nsh}.send_from(
+	  srv.server_thread, "/reply", "ssss", NonSessionHandler::NSM_ANNOUNCE,
+	  "hello", "name_of_session_manager",
+	  NonSessionHandler::NSM_REQUIRED_SERVER_CAPABILITIES);
 
 	short_sleep<>();
 	ASSERT_TRUE(nsh.session_is_running());
@@ -121,6 +127,19 @@ TEST(NonSessionHandler, is_failed_after_failed_handshake)
 
 	short_sleep<>();
 	ASSERT_FALSE(nsh.session_is_running());
+	ASSERT_TRUE(nsh.session_has_failed());
+}
+
+TEST(NonSessionHandler, fails_on_missing_required_server_capabilities)
+{
+	ServerEmulation srv;
+	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe");
+	short_sleep<>();
+	lo::Address{nsh}.send_from(srv.server_thread, "/reply", "ssss",
+	                           NonSessionHandler::NSM_ANNOUNCE, "hello",
+	                           "dummy-manager"
+	                           "cap");
+	short_sleep<>();
 	ASSERT_TRUE(nsh.session_has_failed());
 }
 

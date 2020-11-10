@@ -20,6 +20,11 @@ public:
 	constexpr static const char* NSM_OPEN{"/nsm/client/open"};
 	constexpr static const char* NSM_SAVE{"/nsm/client/save"};
 
+	constexpr static const char* NSM_CLIENT_NAME{"traktor-kontrol-f1-mapper"};
+	constexpr static const char* NSM_CLIENT_CAPABILITIES{"switch"};
+	constexpr static std::array<const char*, 1>
+	  NSM_REQUIRED_SERVER_CAPABILITIES{"broadcast"};
+
 	enum class State : int
 	{
 		NO_SESSION = 0,
@@ -74,8 +79,13 @@ private:
 	template <typename... T>
 	void handle_error(T... args);
 
-	void handle_open(std::string_view project_path, std::string_view display_name, std::string_view client_id);
+	void handle_open(std::string_view project_path,
+	                 std::string_view display_name,
+	                 std::string_view client_id);
 	void handle_save();
+
+	void assert_server_announce_matches_required_capabilities(
+	  std::string_view capabilities);
 
 	lo::ServerThread s2c_thread;
 	const lo::Address c2s_addr;

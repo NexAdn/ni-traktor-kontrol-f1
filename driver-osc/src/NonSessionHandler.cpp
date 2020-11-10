@@ -7,11 +7,14 @@
 template <>
 void NonSessionHandler::handle_reply(std::string_view path,
                                      std::string_view arg1,
-                                     std::string_view arg2)
+                                     std::string_view arg2,
+                                     std::string_view arg3)
 {
 	if (path == NSM_ANNOUNCE) {
 		debug("Received announce reply\n");
 		if (session_state == State::HANDSHAKE_AWAIT_REPLY) {
+			assert_server_announce_matches_required_capabilities(arg3);
+
 			handshake_complete = true;
 
 			debug("handle_reply(): Step state machine\n");
@@ -122,13 +125,14 @@ void NonSessionHandler::register_callbacks()
 	                         []() {});
 #endif
 
-	s2c_thread.add_method("/reply", "sss", [this](lo::Message msg) {
+	s2c_thread.add_method("/reply", "ssss", [this](lo::Message msg) {
 		debug("Received /reply\n");
 		auto** argv = msg.argv();
 		std::string_view path = reinterpret_cast<const char*>(&argv[0]->s);
 		std::string_view arg1 = reinterpret_cast<const char*>(&argv[1]->s);
 		std::string_view arg2 = reinterpret_cast<const char*>(&argv[2]->s);
-		handle_reply(path, arg1, arg2);
+		std::string_view arg3 = reinterpret_cast<const char*>(&argv[3]->s);
+		handle_reply(path, arg1, arg2, arg3);
 	});
 	s2c_thread.add_method("/error", "sis", [this](lo::Message msg) {
 		debug("Received /error\n");
@@ -157,8 +161,8 @@ void NonSessionHandler::register_callbacks()
 void NonSessionHandler::send_announce()
 {
 	debug(std::string{"send_announce(): Sending "} + NSM_ANNOUNCE + '\n');
-	c2s_addr.send_from(s2c_thread, NSM_ANNOUNCE, "sssiii",
-	                   "application-name-FIXME", "", executable_name.data(),
+	c2s_addr.send_from(s2c_thread, NSM_ANNOUNCE, "sssiii", NSM_CLIENT_NAME,
+	                   NSM_CLIENT_CAPABILITIES, executable_name.data(),
 	                   NON_API_VERSION_MAJOR, NON_API_VERSION_MINOR,
 	                   ::getpid());
 }
@@ -177,4 +181,24 @@ void NonSessionHandler::handle_save()
 	// We have nothing to save
 	debug("NonSessionHandler::handle_save(): Sending /reply\n");
 	c2s_addr.send_from(s2c_thread, "/reply", "ss", NSM_SAVE, "NOP");
+}
+
+void NonSessionHandler::assert_server_announce_matches_required_capabilities(
+  std::string_view capabilities)
+{
+	// We assume no capability is prefix of any other capability
+	for (const auto& required_cap :
+	     NonSessionHandler::NSM_REQUIRED_SERVER_CAPABILITIES) {
+		size_t found_pos = capabilities.find(required_cap);
+		if (found_pos == std::string_view::npos) {
+			debug(
+			  std::string{"NonSessionHandler::assert_server_announce_matches_"
+			              "required_capabilities(): Missing capability "}
+			  + required_cap + '\n');
+			debug("State transition: FAILED\n");
+			session_state = State::FAILED;
+			throw std::runtime_error(std::string{"Missing server capability: "}
+			                         + required_cap);
+		}
+	}
 }
