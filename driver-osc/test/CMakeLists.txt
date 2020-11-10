@@ -11,17 +11,18 @@ target_include_directories(test_${name}_runner
 	${PROJECT_BINARY_DIR}
 )
 target_link_libraries(test_${name}_runner
-	# TODO link libraries
+	nonsession
 	GTest::GTest
 )
 gtest_discover_tests(
 	test_${name}_runner
 	# PROPERTIES ENVIRONMENT KEY=value
+	PROPERTIES ENVIRONMENT GTEST_COLOR=yes
 )
 set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} test_${name}_runner)
 endmacro()
 
-## TODO insert tests
+make_test(NonSessionHandler NonSessionHandler.cpp)
 
 set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} PARENT_SCOPE)
 

@@ -6,8 +6,9 @@ option(WITH_TESTS "Enable unit tests" ON)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 pkg_check_modules(libhid REQUIRED IMPORTED_TARGET libhid)
+pkg_check_modules(liblo REQUIRED IMPORTED_TARGET liblo)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -Wno-sign-compare")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -Wno-sign-compare -DDEBUG")
 
 add_subdirectory(src)
 
@@ -21,7 +22,7 @@ if (${WITH_TESTS})
 	add_subdirectory(test)
 
 	add_custom_target(check
-		COMMAND ${CMAKE_CTEST_COMMAND}
+		COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
 		DEPENDS ${REQUIRED_TEST_TARGETS}
 	)
 endif()
