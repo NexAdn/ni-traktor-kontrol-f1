@@ -1,0 +1,4 @@
+build/
+cmake-build-*
+doc/html
+doc/latex
