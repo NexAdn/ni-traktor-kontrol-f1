@@ -1,24 +1,14 @@
 #pragma once
 
-#include <array>
-#include <bitset>
-#include <cstdint>
 #include <exception>
 #include <ostream>
+
+#include "F1InputState.hpp"
 
 class F1HidDev
 {
 public:
-	struct input
-	{
-		uint8_t report_id;
-		std::bitset<16> matrix_btns;
-		std::bitset<9> special_btns;
-		std::bitset<4> stop_btns;
-		uint8_t wheel;
-		std::array<uint16_t, 4> knobs;
-		std::array<uint16_t, 4> faders;
-	};
+	using input = F1InpuState;
 
 	struct output
 	{
