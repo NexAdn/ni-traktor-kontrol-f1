@@ -5,10 +5,15 @@ option(WITH_TESTS "Enable unit tests" ON)
 
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
-pkg_check_modules(libhid REQUIRED IMPORTED_TARGET libhid)
 pkg_check_modules(liblo REQUIRED IMPORTED_TARGET liblo)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -Wno-sign-compare -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
+
+configure_file(
+	src/config.h.in
+	${PROJECT_BINARY_DIR}/config.h
+)
 
 add_subdirectory(src)
 
