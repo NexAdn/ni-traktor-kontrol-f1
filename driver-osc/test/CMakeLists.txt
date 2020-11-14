@@ -22,6 +22,7 @@ gtest_discover_tests(
 set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} test_${name}_runner)
 endmacro()
 
+make_test(F1InputChange F1InputChange.cpp)
 make_test(NonSessionHandler NonSessionHandler.cpp)
 
 set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} PARENT_SCOPE)
