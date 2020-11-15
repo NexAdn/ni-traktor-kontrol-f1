@@ -231,14 +231,14 @@ void NonSessionHandler::register_callbacks()
 		std::string_view arg3 = reinterpret_cast<const char*>(&argv[3]->s);
 		handle_reply(path, arg1, arg2, arg3);
 	});
-	s2c_thread.add_method("/reply", "ssiii", [this](lo::Message msg) {
+	s2c_thread.add_method("/reply", "ssfff", [this](lo::Message msg) {
 		debug("Received /reply\n");
 		auto** argv = msg.argv();
 		std::string_view path = reinterpret_cast<const char*>(&argv[0]->s);
 		std::string_view arg1 = reinterpret_cast<const char*>(&argv[1]->s);
-		int32_t arg2 = argv[2]->i;
-		int32_t arg3 = argv[3]->i;
-		int32_t arg4 = argv[4]->i;
+		float arg2 = argv[2]->f;
+		float arg3 = argv[3]->f;
+		float arg4 = argv[4]->f;
 		if (path == OSC_SIGNAL_LIST) {
 			handle_signal_list_reply(arg1, arg2, arg3, arg4);
 		} else {
@@ -363,9 +363,10 @@ void NonSessionHandler::handle_signal_list(const lo::Address& peer)
 		lo::Message& msg = msgs.emplace_back();
 		msg.add_string(OSC_SIGNAL_LIST);
 		msg.add_string(signal.path);
-		msg.add_int32(signal.min);
-		msg.add_int32(signal.max);
-		msg.add_int32(signal.default_value);
+		msg.add_string(signal.direction_str());
+		msg.add_float(signal.min);
+		msg.add_float(signal.max);
+		msg.add_float(signal.default_value);
 		assert(msg.is_valid());
 		bundle.add("/reply", msg);
 	}
@@ -386,8 +387,8 @@ void NonSessionHandler::handle_signal_list(const lo::Address& peer)
 }
 
 void NonSessionHandler::handle_signal_list_reply(std::string_view signal_path,
-                                                 int32_t min, int32_t max,
-                                                 int32_t default_value)
+                                                 float min, float max,
+                                                 float default_value)
 {
 	assert(current_handshaking_peer != peers.end());
 	auto& peer = current_handshaking_peer->second;

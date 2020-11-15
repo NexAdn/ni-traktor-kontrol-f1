@@ -130,9 +130,9 @@ private:
 	void handle_save();
 	void handle_signal_list(const lo::Address& peer);
 	void handle_signal_list_reply(std::string_view signal_path,
-	                              int32_t min,
-	                              int32_t max,
-	                              int32_t default_value);
+	                              float min,
+	                              float max,
+	                              float default_value);
 
 	void assert_server_announce_matches_required_capabilities(
 	  std::string_view capabilities);

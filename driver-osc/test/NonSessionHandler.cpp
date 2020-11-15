@@ -97,7 +97,7 @@ public:
 	MixerEmulation() : ServerEmulation(false)
 	{
 		debug("MixerEmulation: Listening at " + server_thread.url() + '\n');
-		server_thread.add_method("/reply", "ssiii", [this](lo::Message msg) {
+		server_thread.add_method("/reply", "sssfff", [this](lo::Message msg) {
 			debug("MixerEmulation: Received reply\n");
 			received_messages.push({"/reply", msg});
 		});
@@ -137,7 +137,7 @@ public:
 		debug("MixerEmulation: Transmitting signal list\n");
 		lo::Address nsh_addr = nsh;
 		for (const auto& signal : signals) {
-			nsh_addr.send_from(server_thread, "/reply", "ssiii",
+			nsh_addr.send_from(server_thread, "/reply", "ssfff",
 			                   NonSessionHandler::OSC_SIGNAL_LIST,
 			                   signal.path.c_str(), signal.min, signal.max,
 			                   signal.default_value);
@@ -216,8 +216,7 @@ TEST(NonSessionHandler, fails_on_missing_required_server_capabilities)
 {
 	ServerEmulation srv;
 	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe");
-	// TODO: Need to assert an exception gets thrown
-	// nsh.start_session();
+	nsh.start_session();
 	short_sleep<>();
 	lo::Address{nsh}.send_from(srv.server_thread, "/reply", "ssss",
 	                           NonSessionHandler::NSM_ANNOUNCE, "hello",
@@ -267,8 +266,9 @@ TEST(NonSessionHandler, returns_signals_on_signal_list)
 {
 	ServerEmulation srv;
 	MixerEmulation mix;
-	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe",
-	                      {{"/c/1", 0, 10, 5}, {"/c/2", 10, 30, 20}});
+	NonSessionHandler nsh(
+	  srv.server_uri, "/invalid/path/exe",
+	  {{"/c/1", 0.f, 10.f, 5.f}, {"/c/2", 10.f, 30.f, 20.f}});
 	srv.prepare_session(nsh);
 	short_sleep<>();
 
@@ -285,27 +285,31 @@ TEST(NonSessionHandler, returns_signals_on_signal_list)
 
 	lo::Message control_2_msg = mix.received_messages.top().second;
 	mix.received_messages.pop();
-	ASSERT_EQ("ssiii", control_2_msg.types());
+	ASSERT_EQ("sssfff", control_2_msg.types());
 	lo_arg** control_2_argv = control_2_msg.argv();
 	ASSERT_EQ(std::string{NonSessionHandler::OSC_SIGNAL_LIST},
 	          reinterpret_cast<const char*>(&control_2_argv[0]->s));
 	ASSERT_EQ(std::string{"/c/2"},
 	          reinterpret_cast<const char*>(&control_2_argv[1]->s));
-	ASSERT_EQ(10, control_2_argv[2]->i);
-	ASSERT_EQ(30, control_2_argv[3]->i);
-	ASSERT_EQ(20, control_2_argv[4]->i);
+	ASSERT_EQ(std::string{"out"},
+				reinterpret_cast<const char*>(&control_2_argv[2]->s));
+	ASSERT_EQ(10.f, control_2_argv[3]->f);
+	ASSERT_EQ(30.f, control_2_argv[4]->f);
+	ASSERT_EQ(20.f, control_2_argv[5]->f);
 
 	lo::Message control_1_msg = mix.received_messages.top().second;
 	mix.received_messages.pop();
-	ASSERT_EQ("ssiii", control_1_msg.types());
+	ASSERT_EQ("sssfff", control_1_msg.types());
 	lo_arg** control_1_argv = control_1_msg.argv();
 	ASSERT_EQ(std::string{NonSessionHandler::OSC_SIGNAL_LIST},
 	          reinterpret_cast<const char*>(&control_1_argv[0]->s));
 	ASSERT_EQ(std::string{"/c/1"},
 	          reinterpret_cast<const char*>(&control_1_argv[1]->s));
-	ASSERT_EQ(0, control_1_argv[2]->i);
-	ASSERT_EQ(10, control_1_argv[3]->i);
-	ASSERT_EQ(5, control_1_argv[4]->i);
+	ASSERT_EQ(std::string{"out"},
+				reinterpret_cast<const char*>(&control_1_argv[2]->s));
+	ASSERT_EQ(0.f, control_1_argv[3]->f);
+	ASSERT_EQ(10.f, control_1_argv[4]->f);
+	ASSERT_EQ(5.f, control_1_argv[5]->f);
 }
 
 TEST(NonSessionHandler, requests_signals_on_hello)

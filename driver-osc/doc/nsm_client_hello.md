@@ -24,7 +24,7 @@ The client shall now send all its signals it provides.
 
 ### Signal reply
 
-Each provided signal is sent to the requesting client as a reply to its `/signal/list` message by sending `/reply /signal/list s:path i:min i:max i:default_value` for each provided signal seperately.
+Each provided signal is sent to the requesting client as a reply to its `/signal/list` message by sending `/reply /signal/list s:path s:direction f:min f:max f:default_value` for each provided signal seperately.
 The list of signals ends by sending `/reply /signal/list` (kind of the equivalent to a zero-terminated string).
 
 The first part of the handshake is now complete.
@@ -37,7 +37,7 @@ One can't know for sure.
   * starting client – The client initiating the handshake
   * requesting client – A client responding to the starting client's handshake by requesting its provided signals
   * listener URL – The URL of the respective client's OSC server which can be used to send messages to the client. This is _not_ the nsmd's URL!
-  * signal – A tuple `{path, min, max, default_value}` representing some kind of information or event the client providing the signal can send to connected clients.
+  * signal – A tuple `{path, direction, min, max, default_value}` representing some kind of information or event the client providing the signal can send to or receive from connected clients.
 
 ## TODOs
 
