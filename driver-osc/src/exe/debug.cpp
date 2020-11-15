@@ -16,7 +16,7 @@
 
 #define TKF1_VENDOR 0x17cc
 #define TKF1_PRODUCT 0x1120
-#define TKF1_DEVFILE "/dev/hidraw4"
+#define TKF1_DEVFILE "/dev/hidraw2"
 
 #define BUF_SIZE 22
 
