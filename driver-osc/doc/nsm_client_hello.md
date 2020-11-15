@@ -12,7 +12,7 @@ which happens after the Non session has been started, the project has been opene
 Each party has to start a handshake of their own, i.e. the driver and Non-Mixer both have to start the handshake.
 There is no need to coordinate both handshakes as each handshake provides different data to the other party.
 
-Handshakes start by broadcasting an NSM hello: `/nsm/server/broadcast /nsm/hello`.
+Handshakes start by broadcasting an NSM hello: `/nsm/server/broadcast /non/hello`.
 This message contains the client's listener URL, version, client ID etc.
 In short, everything the other party might or might not need.
 **FIXME** _We need a detailed message description (i.e. which parameters and in which order)._
@@ -38,8 +38,4 @@ One can't know for sure.
   * requesting client – A client responding to the starting client's handshake by requesting its provided signals
   * listener URL – The URL of the respective client's OSC server which can be used to send messages to the client. This is _not_ the nsmd's URL!
   * signal – A tuple `{path, direction, min, max, default_value}` representing some kind of information or event the client providing the signal can send to or receive from connected clients.
-
-## TODOs
-
-  * signal directions – Signals can go in both directions. Currently, the protocol does not support directions yet, but NSM's protocol does.
 
