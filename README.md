@@ -30,3 +30,10 @@ Outputs have not yet been reverse engineered.
   * https://www.usb.org/sites/default/files/hid1_11.pdf
   * https://www.usb.org/sites/default/files/hut1_21.pdf
   * https://www.kernel.org/doc/html/latest/hid/hidraw.html
+
+## License
+
+Copyright (C) 2020 Adrian Schollmeyer.
+
+This repository is licensed under the terms of the GNU General Public License Version 2 or later.
+A copy of the GPL can be found in [LICENSE.md](LICENSE.md).
