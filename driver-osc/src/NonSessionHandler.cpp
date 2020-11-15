@@ -151,7 +151,7 @@ void NonSessionHandler::broadcast_input_event(const F1InputChange& changes)
 		auto& msg = messages.emplace_back();
 		std::string path =
 		  std::string{OSC_SIG_KNOB} + std::to_string(knob.first);
-		msg.add_float(knob.second);
+		msg.add_float(knob.second / F1Default::KNOB_MAX);
 		assert(msg.is_valid());
 		bundle.add(path, msg);
 	}
@@ -160,7 +160,7 @@ void NonSessionHandler::broadcast_input_event(const F1InputChange& changes)
 		auto& msg = messages.emplace_back();
 		std::string path =
 		  std::string{OSC_SIG_FADER} + std::to_string(fader.first);
-		msg.add_float(fader.second);
+		msg.add_float(fader.second / F1Default::FADER_MAX);
 		assert(msg.is_valid());
 		bundle.add(path, msg);
 	}
@@ -356,35 +356,28 @@ void NonSessionHandler::register_callbacks()
 		debug(std::string{"Received "} + OSC_SIGNAL_LIST + '\n');
 		handle_signal_list(msg.source());
 	});
-	s2c_thread.add_method(
-	  NSM_INCOMING_BROADCAST, "sssss", [this](lo::Message msg) {
-		  std::string_view broadcast_message =
-		    reinterpret_cast<const char*>(&msg.argv()[0]->s);
-		  debug(std::string{"Received Broadcast "} + broadcast_message.data()
-		        + '\n');
-		  if (broadcast_message == NSM_HELLO) {
-			  // TODO
-			  std::string_view peer_url =
-			    reinterpret_cast<const char*>(&msg.argv()[1]->s);
-			  std::string_view peer_name =
-			    reinterpret_cast<const char*>(&msg.argv()[2]->s);
-			  std::string_view peer_version =
-			    reinterpret_cast<const char*>(&msg.argv()[3]->s);
-			  std::string peer_client_id =
-			    reinterpret_cast<const char*>(&msg.argv()[4]->s);
+	s2c_thread.add_method(NSM_HELLO, "ssss", [this](lo::Message msg) {
+		debug(std::string{"Received hello\n"});
+		std::string_view peer_url =
+		  reinterpret_cast<const char*>(&msg.argv()[0]->s);
+		std::string_view peer_name =
+		  reinterpret_cast<const char*>(&msg.argv()[1]->s);
+		std::string_view peer_version =
+		  reinterpret_cast<const char*>(&msg.argv()[2]->s);
+		std::string peer_client_id =
+		  reinterpret_cast<const char*>(&msg.argv()[3]->s);
 
-			  if (peer_is_known(peer_client_id)) {
-				  // TODO Update URL
-				  debug("Feature not implemented\n");
-				  assert(false);
-			  } else {
-				  peers.emplace(peer_client_id,
-				                NonPeer(peer_client_id, peer_name, peer_version,
-				                        peer_url, s2c_thread));
-			  }
-			  step_state_machine();
-		  }
-	  });
+		if (peer_is_known(peer_client_id)) {
+			// TODO Update URL
+			debug("Feature not implemented\n");
+			assert(false);
+		} else {
+			peers.emplace(peer_client_id,
+			              NonPeer(peer_client_id, peer_name, peer_version,
+			                      peer_url, s2c_thread));
+		}
+		step_state_machine();
+	});
 }
 
 void NonSessionHandler::send_announce()

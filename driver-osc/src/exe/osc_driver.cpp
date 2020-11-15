@@ -19,8 +19,8 @@
 namespace
 {
 constexpr const char* HIDRAW_PREFIX{"/dev/hidraw"};
-constexpr int16_t F1_VENDOR_ID{0};
-constexpr int16_t F1_PRODUCT_ID{0};
+constexpr int16_t F1_VENDOR_ID{0x17cc};
+constexpr int16_t F1_PRODUCT_ID{0x1120};
 
 int exec_driver(int fd, const char* nsm_url, std::string_view exe_name);
 } // namespace

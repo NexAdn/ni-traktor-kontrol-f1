@@ -121,10 +121,10 @@ public:
 	void send_hello(NonSessionHandler& nsh)
 	{
 		debug("MixerEmulation: Sending hello\n");
-		lo::Address{nsh}.send_from(
-		  server_thread, NonSessionHandler::NSM_INCOMING_BROADCAST, "sssss",
-		  NonSessionHandler::NSM_HELLO, server_thread.url().c_str(),
-		  client_name.c_str(), "42.42", client_id.c_str());
+		lo::Address{nsh}.send_from(server_thread, NonSessionHandler::NSM_HELLO,
+		                           "ssss", server_thread.url().c_str(),
+		                           client_name.c_str(), "42.42",
+		                           client_id.c_str());
 	}
 
 	void fetch_signal_list(NonSessionHandler& nsh)
@@ -256,7 +256,7 @@ TEST(NonSessionHandler, starts_hello_after_open_and_session_loaded)
 	  reinterpret_cast<const char*>(&hello_msg.argv()[3]->s);
 	std::string_view arg5 =
 	  reinterpret_cast<const char*>(&hello_msg.argv()[4]->s);
-	ASSERT_EQ("/nsm/hello", arg1);
+	ASSERT_EQ("/non/hello", arg1);
 	ASSERT_EQ(static_cast<lo::Address>(nsh).url(), arg2);
 	ASSERT_EQ(NonSessionHandler::NSM_CLIENT_NAME, arg3);
 	ASSERT_EQ(KONTROLF1_VERSION, arg4);
@@ -452,45 +452,7 @@ protected:
 		mix.received_messages = {};
 	}
 
-	const NonSignalList signals{
-	  {"/kontrolf1/mtx/0", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/1", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/2", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/3", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/4", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/5", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/6", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/7", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/8", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/9", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/10", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/11", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/12", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/13", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/14", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/mtx/15", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/stop/0", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/stop/1", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/stop/2", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/stop/3", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/0", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/1", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/2", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/3", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/4", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/5", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/6", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/7", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/special/8", 0.f, 1.f, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/knob/0", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/knob/1", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/knob/2", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/knob/3", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/fader/0", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/fader/1", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/fader/2", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	  {"/kontrolf1/fader/3", 0.f, 0xfff, 0.f, NonSignal::Direction::OUT},
-	};
+	const NonSignalList& signals = F1Default::signals;
 	ServerEmulation srv;
 	MixerEmulationWithSigReceiver mix;
 	NonSessionHandler nsh;
@@ -545,13 +507,13 @@ TEST_F(NonSessionHandlerOnInput, broadcasts_special_button_input_changes)
 
 TEST_F(NonSessionHandlerOnInput, broadcasts_knob_and_fader_input_changes)
 {
-	diff.knobs.push_back({1, 0x777});
-	diff.faders.push_back({3, 0xaaa});
+	diff.knobs.push_back({1, 0xfff});
+	diff.faders.push_back({3, 0x000});
 
 	nsh.broadcast_input_event(diff);
 	short_sleep<>();
 
 	ASSERT_EQ(2, mix.received_signals.size());
-	ASSERT_EQ(0x777, mix.received_signals.at("/kontrolf1/knob/1"));
-	ASSERT_EQ(0xaaa, mix.received_signals.at("/kontrolf1/fader/3"));
+	ASSERT_LE(1.f, mix.received_signals.at("/kontrolf1/knob/1"));
+	ASSERT_EQ(0.f, mix.received_signals.at("/kontrolf1/fader/3"));
 }

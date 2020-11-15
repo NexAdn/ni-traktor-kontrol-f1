@@ -42,3 +42,10 @@ struct F1InputChange
 
 F1InputChange operator-(const F1InpuState& new_state,
                         const F1InpuState& old_state);
+
+namespace F1Default  {
+	constexpr float KNOB_MAX{0xfff};
+	constexpr float KNOB_MIN{0x0};
+	constexpr float FADER_MAX = KNOB_MAX;
+	constexpr float FADER_MIN = KNOB_MIN;
+}

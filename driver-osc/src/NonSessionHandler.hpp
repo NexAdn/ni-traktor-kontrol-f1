@@ -28,7 +28,7 @@ public:
 	constexpr static const char* NSM_BROADCAST{"/nsm/server/broadcast"};
 	constexpr static const char* NSM_INCOMING_BROADCAST{
 	  "/nsm/client/broadcast"};
-	constexpr static const char* NSM_HELLO{"/nsm/hello"};
+	constexpr static const char* NSM_HELLO{"/non/hello"};
 	constexpr static const char* NSM_OPEN{"/nsm/client/open"};
 	constexpr static const char* NSM_SAVE{"/nsm/client/save"};
 	constexpr static const char* OSC_SIGNAL_LIST{"/signal/list"};
