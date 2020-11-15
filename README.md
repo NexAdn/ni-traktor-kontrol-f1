@@ -13,13 +13,13 @@ F1 can receive messages to control the RGB color value of the buttons as well
 as the value shown on the 7 segment display next to the endless encoder.
 
 ## Status of this project
-Currently, the input part of the device has been reverse engineered.
-There are a few bits of the HID messages left which are still unclear.
-A reference driver implementation is in progress.
 
-Outputs have not yet been reverse engineered.
+The inputs and outputs of the device have been reverse engineered.
+The features are still missing and are probably not gonna be added.
 
-## Tools
+A [Non](https://non.tuxfamily.org)-compatible OSC driver implementation is being developed (see [driver-osc](driver-osc/README.md)).
+
+## Main tools used for reverse engineering
   * vim/Okular (Notes taking)
   * usbutils
   * Testing OS: Gentoo Linux
