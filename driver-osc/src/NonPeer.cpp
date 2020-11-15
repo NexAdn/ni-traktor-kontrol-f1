@@ -23,3 +23,12 @@ void NonPeer::register_signal(const NonSignal& sig)
 	signals.push_back(sig);
 }
 
+void NonPeer::send(lo::Bundle& bundle)
+{
+	debug(std::string{"Sending bundle to peer "} + addr.url() + '\n');
+#ifdef DEBUG
+	bundle.print();
+#endif
+	assert(bundle.is_valid());
+	addr.send_from(osc_server, bundle);
+}

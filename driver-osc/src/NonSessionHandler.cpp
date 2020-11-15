@@ -93,6 +93,85 @@ void NonSessionHandler::start_session()
 	step_state_machine();
 }
 
+void NonSessionHandler::broadcast_input_event(const F1InputChange& changes)
+{
+	debug("Sending input event\n");
+	lo::Bundle bundle;
+	std::vector<lo::Message> messages;
+
+	for (const auto& btn : changes.pressed_buttons.matrix) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_MTX} + std::to_string(btn);
+		msg.add_float(OSC_BTN_PRESSED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& btn : changes.released_buttons.matrix) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_MTX} + std::to_string(btn);
+		msg.add_float(OSC_BTN_RELEASED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& btn : changes.pressed_buttons.stop) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_STOP} + std::to_string(btn);
+		msg.add_float(OSC_BTN_PRESSED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& btn : changes.released_buttons.stop) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_STOP} + std::to_string(btn);
+		msg.add_float(OSC_BTN_RELEASED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& btn : changes.pressed_buttons.special) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_SPECIAL} + std::to_string(btn);
+		msg.add_float(OSC_BTN_PRESSED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& btn : changes.released_buttons.special) {
+		auto& msg = messages.emplace_back();
+		std::string path = std::string{OSC_SIG_SPECIAL} + std::to_string(btn);
+		msg.add_float(OSC_BTN_RELEASED);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& knob : changes.knobs) {
+		auto& msg = messages.emplace_back();
+		std::string path =
+		  std::string{OSC_SIG_KNOB} + std::to_string(knob.first);
+		msg.add_float(knob.second);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	for (const auto& fader : changes.faders) {
+		auto& msg = messages.emplace_back();
+		std::string path =
+		  std::string{OSC_SIG_FADER} + std::to_string(fader.first);
+		msg.add_float(fader.second);
+		assert(msg.is_valid());
+		bundle.add(path, msg);
+	}
+
+	assert(bundle.is_valid());
+
+	for (auto& peer : peers) {
+		peer.second.send(bundle);
+	}
+}
+
 void NonSessionHandler::step_state_machine()
 {
 	std::unique_lock<std::mutex> lock(state_machine_mtx);

@@ -5,7 +5,7 @@
 
 #include <lo/lo_cpp.h>
 
-#include "NonSignalList.hpp"
+#include "NonSignal.hpp"
 
 class NonPeer
 {
@@ -52,6 +52,8 @@ public:
 	void send_signal_list(const NonSignalList& signals);
 
 	void register_signal(const NonSignal& sig);
+
+	void send(lo::Bundle& msg_bundle);
 
 private:
 	std::string client_id;

@@ -44,6 +44,15 @@ public:
 	constexpr static const char* NSM_BUTTON_SPECIAL{"/special"};
 	constexpr static const char* NSM_BUTTON_STOP{"/stop"};
 
+	constexpr static const char* OSC_SIG_MTX{"/kontrolf1/mtx/"};
+	constexpr static const char* OSC_SIG_STOP{"/kontrolf1/stop/"};
+	constexpr static const char* OSC_SIG_SPECIAL{"/kontrolf1/special/"};
+	constexpr static const char* OSC_SIG_KNOB{"/kontrolf1/knob/"};
+	constexpr static const char* OSC_SIG_FADER{"/kontrolf1/fader/"};
+	
+	constexpr static float OSC_BTN_PRESSED{1.f};
+	constexpr static float OSC_BTN_RELEASED{0.f};
+
 	enum class State : int
 	{
 		NO_SESSION,
@@ -110,6 +119,8 @@ public:
 	{
 		return peers.at(client_id);
 	}
+
+	void broadcast_input_event(const F1InputChange& changes);
 
 private:
 	void step_state_machine();
