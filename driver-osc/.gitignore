@@ -2,3 +2,4 @@ build/
 cmake-build-*
 doc/html
 doc/latex
+compile_commands.json
