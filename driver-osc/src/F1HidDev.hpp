@@ -14,6 +14,7 @@ public:
 	{
 		constexpr static uint8_t report_id{0x80};
 		std::array<std::array<uint8_t, 3>, 16> matrix_btns;
+		std::array<uint8_t, 4> stop_btns;
 	};
 
 	constexpr F1HidDev(int fd) : fd(fd)

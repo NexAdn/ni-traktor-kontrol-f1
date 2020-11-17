@@ -62,6 +62,11 @@ void F1HidDev::write(const output& output) const
 		}
 	}
 
+	for (size_t i = 0; i < 4; i++) {
+		data.at(i * 2 + 0x49) = output.stop_btns.at(3 - i);
+		data.at(i * 2 + 0x4a) = output.stop_btns.at(3 - i);
+	}
+
 	ssize_t res = ::write(fd, data.data(), data.size());
 
 	if (res != data.size())

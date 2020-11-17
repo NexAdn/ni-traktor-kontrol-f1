@@ -22,7 +22,28 @@ constexpr const char* HIDRAW_PREFIX{"/dev/hidraw"};
 constexpr int16_t F1_VENDOR_ID{0x17cc};
 constexpr int16_t F1_PRODUCT_ID{0x1120};
 
+constexpr auto rgb2c(uint8_t r, uint8_t g, uint8_t b)
+{
+	return F1HidDev::rgb2color(r, g, b);
+}
+
+namespace colors
+{
+	constexpr float lightness_on{1.f};
+	constexpr float lightness_off{.2f};
+
+	constexpr std::array<std::array<uint8_t, 3>, 16> mtx{
+	  rgb2c(0x00, 0x00, 0x7f), rgb2c(0x7f, 0x00, 0x10), rgb2c(0x00, 0x7f, 0x00),
+	  rgb2c(0x7f, 0x7f, 0x00), rgb2c(0x00, 0x00, 0x7f), rgb2c(0x7f, 0x00, 0x10),
+	  rgb2c(0x00, 0x7f, 0x00), rgb2c(0x7f, 0x7f, 0x00), rgb2c(0x00, 0x00, 0x7f),
+	  rgb2c(0x7f, 0x00, 0x10), rgb2c(0x00, 0x7f, 0x00), rgb2c(0x7f, 0x7f, 0x00),
+	  rgb2c(0x00, 0x00, 0x7f), rgb2c(0x7f, 0x00, 0x10), rgb2c(0x00, 0x7f, 0x00),
+	  rgb2c(0x7f, 0x7f, 0x00),
+	};
+} // namespace colors
+
 int exec_driver(int fd, const char* nsm_url, std::string_view exe_name);
+void set_colors(F1HidDev dev, const F1InputChange& input = {});
 } // namespace
 
 int main(int argc, char** argv)
@@ -92,6 +113,10 @@ int exec_driver(int fd, const char* nsm_url, std::string_view exe_name)
 		return 4;
 	}
 
+	set_colors(dev);
+
+	std::bitset<4> stop_buttons;
+
 	F1InpuState last{};
 
 	while (true) {
@@ -100,11 +125,87 @@ int exec_driver(int fd, const char* nsm_url, std::string_view exe_name)
 
 		F1InputChange input_diff = current - last;
 
+		decltype(input_diff.pressed_buttons.stop) new_pressed_stop;
+		decltype(input_diff.released_buttons.stop) new_released_stop;
+
+		for (auto& btn : input_diff.pressed_buttons.stop) {
+			stop_buttons.flip(btn);
+			if (stop_buttons[btn]) {
+				new_pressed_stop.push_back(btn);
+			} else {
+				new_released_stop.push_back(btn);
+			}
+		}
+
+		input_diff.pressed_buttons.stop = new_pressed_stop;
+		input_diff.released_buttons.stop = new_released_stop;
+
 		nsh.broadcast_input_event(input_diff);
+		set_colors(dev, input_diff);
 
 		last = current;
 	}
 
 	return 0;
+}
+
+void set_colors(F1HidDev dev, const F1InputChange& input)
+{
+	static F1HidDev::output output;
+	static bool first_time{true};
+	if (first_time) {
+		debug("[KontrolF1] Setting initial button colors\n");
+		first_time = false;
+		for (size_t i = 0; i < 16; i++) {
+			auto color = colors::mtx.at(i);
+			for (auto& c : color) {
+				c *= colors::lightness_off;
+			}
+			output.matrix_btns.at(i) = color;
+		}
+
+		for (size_t i = 0; i < 4; i++) {
+			output.stop_btns.at(i) = 0x7f * colors::lightness_off;
+		}
+
+		dev.write(output);
+	}
+
+	for (auto& btn : input.pressed_buttons.matrix) {
+		debug(std::string{"[KontrolF1] Turning on lights for matrix button "}
+		      + std::to_string(btn) + '\n');
+		auto color = colors::mtx[btn];
+		for (size_t i = 0; i < color.size(); ++i) {
+			color[i] *= colors::lightness_on;
+		}
+
+		output.matrix_btns[btn] = color;
+	}
+
+	for (auto& btn : input.released_buttons.matrix) {
+		debug(std::string{"[KontrolF1] Turning off lights for matrix button "}
+		      + std::to_string(btn) + '\n');
+		auto color = colors::mtx[btn];
+		for (size_t i = 0; i < color.size(); ++i) {
+			color[i] *= colors::lightness_off;
+		}
+
+		output.matrix_btns[btn] = color;
+	}
+
+	for (auto& btn : input.pressed_buttons.stop) {
+		debug(std::string{"[KontrolF1] Turning on lights for stop button "}
+		      + std::to_string(btn) + '\n');
+		output.stop_btns[btn] = colors::lightness_on * 0x7f;
+	}
+
+	for (auto& btn : input.released_buttons.stop) {
+		debug(std::string{"[KontrolF1] Turning off lights for stop button "}
+		      + std::to_string(btn) + '\n');
+		output.stop_btns[btn] = colors::lightness_off * 0x7f;
+	}
+
+	debug("[KontrolF1] Writing output\n");
+	dev.write(output);
 }
 } // namespace
