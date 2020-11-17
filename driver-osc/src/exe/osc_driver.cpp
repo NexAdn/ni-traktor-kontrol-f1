@@ -90,6 +90,7 @@ int main(int argc, char** argv)
 		}
 
 		debug("  Device mismatch. Trying next device.\n");
+		close(fd);
 	}
 }
 
