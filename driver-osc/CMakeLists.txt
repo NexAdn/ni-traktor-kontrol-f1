@@ -31,3 +31,9 @@ if (${WITH_TESTS})
 		DEPENDS ${REQUIRED_TEST_TARGETS}
 	)
 endif()
+
+add_custom_target(doc
+	COMMAND doxygen
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	COMMENT "Generating documentation"
+)
