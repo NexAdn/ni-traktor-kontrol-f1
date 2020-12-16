@@ -464,7 +464,8 @@ void NonSessionHandler::handle_signal_list_reply(std::string_view signal_path,
 {
 	assert(current_handshaking_peer != peers.end());
 	auto& peer = current_handshaking_peer->second;
-	peer.register_signal({signal_path.data(), min, max, default_value});
+	// FIXME Read direction from reply
+	peer.register_signal(signal_path, min, max, default_value, NonSignal::Direction::IN);
 }
 
 void NonSessionHandler::assert_server_announce_matches_required_capabilities(

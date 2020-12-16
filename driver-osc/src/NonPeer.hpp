@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string_view>
 #include <vector>
 
@@ -7,9 +8,13 @@
 
 #include "NonSignal.hpp"
 
+class NonSignalConnector;
+
 class NonPeer
 {
 public:
+	using signal_value_type = float;
+
 	inline NonPeer(std::string_view client_id, std::string_view client_name,
 	               std::string_view client_version, std::string_view url,
 	               lo::ServerThread& osc_server)
@@ -28,11 +33,11 @@ public:
 	{}
 	inline ~NonPeer() = default;
 
-	inline std::string_view id() const noexcept
+	inline const std::string& id() const noexcept
 	{
 		return client_id;
 	}
-	inline std::string_view name() const noexcept
+	inline const std::string& name() const noexcept
 	{
 		return client_name;
 	}
@@ -46,14 +51,25 @@ public:
 		return signals.size();
 	}
 
-	void fetch_signal_list();
-	// FIXME: Do we even need this? Currently, sending the signal list is done
-	// in NonSessionHandler.cpp
-	void send_signal_list(const NonSignalList& signals);
+	inline const NonRemoteSignal& signal_at(const std::string& path) const
+	{
+		return signals.at(path);
+	}
 
-	void register_signal(const NonSignal& sig);
+	void fetch_signal_list();
+
+	inline void register_signal(const NonSignal& sig)
+	{
+		register_signal(sig.path, sig.min, sig.max, sig.default_value,
+		                sig.direction);
+	}
+	void register_signal(std::string_view path, signal_value_type min,
+	                     signal_value_type max, signal_value_type default_value,
+	                     NonSignal::Direction dir = NonSignal::Direction::IN);
 
 	void send(lo::Bundle& msg_bundle);
+
+	void register_signals_at(NonSignalConnector& connector) const;
 
 private:
 	std::string client_id;
@@ -62,5 +78,6 @@ private:
 	lo::Address addr;
 	lo::ServerThread& osc_server;
 
-	NonSignalList signals;
+	// NonRemoteSignalList signals;
+	std::map<std::string, NonRemoteSignal> signals;
 };

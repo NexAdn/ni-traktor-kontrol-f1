@@ -9,6 +9,7 @@ target_include_directories(f1hid
 add_library(nonsession STATIC
 	NonPeer.cpp
 	NonSessionHandler.cpp
+	NonSignalConnector.cpp
 )
 target_include_directories(nonsession
 	PUBLIC

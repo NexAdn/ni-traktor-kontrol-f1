@@ -2,7 +2,10 @@
 
 #include <cassert>
 #include <string>
+#include <string_view>
 #include <vector>
+
+class NonPeer;
 
 class NonSignal
 {
@@ -10,9 +13,29 @@ public:
 	enum class Direction
 	{
 		IN,
-		OUT,
-		BIDIRECTIONAL
+		OUT
 	};
+
+	enum class Type
+	{
+		DUMMY,
+		HARDWARE,
+		EXTERNAL
+	};
+
+	inline NonSignal(std::string_view path, float min = 0.f, float max = 1.f,
+	                 float default_value = 0.f,
+	                 Direction direction = Direction::OUT,
+	                 Type type = Type::DUMMY)
+	    : path(path)
+	    , min(min)
+	    , max(max)
+	    , default_value(default_value)
+	    , direction(direction)
+	    , type(type)
+	{}
+	inline NonSignal(const NonSignal&) = default;
+	inline virtual ~NonSignal() = default;
 
 	inline auto direction_str() const
 	{
@@ -24,11 +47,15 @@ public:
 		case Direction::IN:
 			return "in";
 		case Direction::OUT:
-		case Direction::BIDIRECTIONAL:
 			return "out";
 		}
 
 		return "INVALID";
+	}
+
+	inline bool operator==(const NonSignal& other) const noexcept
+	{
+		return path == other.path;
 	}
 
 	const std::string path;
@@ -36,9 +63,33 @@ public:
 	const float max;
 	const float default_value;
 	const Direction direction{Direction::OUT};
+	const Type type;
+};
+
+class NonRemoteSignal : public NonSignal
+{
+public:
+	inline NonRemoteSignal(NonPeer& owner, std::string_view path, float min,
+	                       float max, float default_value,
+	                       Direction direction = Direction::IN)
+	    : NonSignal(path, min, max, default_value, direction, Type::EXTERNAL)
+	    , owner(owner)
+	{}
+	inline NonRemoteSignal(const NonRemoteSignal&) = default;
+	inline ~NonRemoteSignal() = default;
+
+	inline bool operator==(const NonRemoteSignal& other) const noexcept
+	{
+		return path == other.path && &owner == &other.owner;
+	}
+
+	void send_value(float value);
+
+	NonPeer& owner;
 };
 
 using NonSignalList = std::vector<NonSignal>;
+using NonRemoteSignalList = std::vector<NonRemoteSignal>;
 
 namespace F1Default
 {

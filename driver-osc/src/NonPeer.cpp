@@ -1,5 +1,6 @@
 #include "NonPeer.hpp"
 #include "NonSessionHandler.hpp"
+#include "NonSignalConnector.hpp"
 
 #define DBG_MODULE_NAME "NSH"
 #include "debug.hpp"
@@ -15,12 +16,14 @@ void NonPeer::fetch_signal_list()
 	assert(res >= 0);
 }
 
-void NonPeer::register_signal(const NonSignal& sig)
+void NonPeer::register_signal(std::string_view path, signal_value_type min,
+                              signal_value_type max,
+                              signal_value_type default_value,
+                              NonSignal::Direction dir)
 {
-	debug(std::string{"Registering signal "} + sig.path + ":"
-	      + std::to_string(sig.min) + "/" + std::to_string(sig.max) + "/"
-	      + std::to_string(sig.default_value) + '\n');
-	signals.push_back(sig);
+	debug(std::string{"Registering signal "} + path.data() + '\n');
+	signals.emplace(path,
+	                NonRemoteSignal{*this, path, min, max, default_value, dir});
 }
 
 void NonPeer::send(lo::Bundle& bundle)
@@ -31,4 +34,11 @@ void NonPeer::send(lo::Bundle& bundle)
 #endif
 	assert(bundle.is_valid());
 	addr.send_from(osc_server, bundle);
+}
+
+void NonPeer::register_signals_at(NonSignalConnector& connector) const
+{
+	for (auto& signal : signals) {
+		connector.add_signal(signal.second);
+	}
 }

@@ -23,7 +23,9 @@ set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} test_${name}_runner)
 endmacro()
 
 #make_test(F1InputChange F1InputChange.cpp)
+make_test(NonPeer NonPeer.cpp)
 make_test(NonSessionHandler NonSessionHandler.cpp)
+make_test(NonSignalConnector NonSignalConnector.cpp)
 
 set(REQUIRED_TEST_TARGETS ${REQUIRED_TEST_TARGETS} PARENT_SCOPE)
 
