@@ -4,6 +4,21 @@
 #include <string>
 #include <vector>
 
+/**
+ * Representation of a signal within the NSM environment
+ *
+ * This class represents both local and remote signals (i.e. our signals and
+ * signals other peers have offered us).
+ *
+ * Signals are simple (path, min, max, default, direction) tuples representing
+ * some input or output of the application. Signals can be connected to other
+ * signals (i.e. IN signals to OUT signals) to create a signal flow across
+ * applications which makes controlling one application from another possible
+ * (which is what we want!).
+ *
+ * This class does not implement any semantics itself (other than string
+ * conversion of the {@link NonSignal::Direction} value).
+ */
 class NonSignal
 {
 public:
@@ -18,6 +33,9 @@ public:
 	{
 		return direction_str(direction);
 	}
+	/**
+	 * Convert the direction value to a string as needed by the Non API
+	 */
 	static std::string direction_str(Direction direction)
 	{
 		switch (direction) {
@@ -40,6 +58,9 @@ public:
 
 using NonSignalList = std::vector<NonSignal>;
 
+/**
+ * Default values for the Traktor Kontrol F1
+ */
 namespace F1Default
 {
 const NonSignalList signals{

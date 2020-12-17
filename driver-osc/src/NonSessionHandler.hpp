@@ -15,6 +15,30 @@
 
 class F1InputChange;
 
+/**
+ * Main interface to the Non Session Manager and implementation of NSM related
+ * protocols
+ *
+ * This class aims to implement the whole Non Session Management protocol using
+ * a state machine as well as handle traffic received from the Non Session
+ * Manager and included Non Peers.
+ *
+ * This class must be the only class responsible for receiving and processing
+ * OSC messages. It furthermore is responsible for creating objects representing
+ * any OSC related stuff or preparing the data for creating such objects (e.g.
+ * {@link NonPeer}s, partially {@link NonSignal}s).
+ *
+ * The class contains its own OSC server and state machine to handle the
+ * communication to the Non Session Manager and its connected peers. It
+ * provides a listener thread for handling incoming OSC messages as well as
+ * separate handler methods for separate message types.
+ *
+ * The state machine is responsible for emitting any non-trivial events which
+ * should happen in response to incoming events.
+ * Furthermore, the state of input variables is partially tracked inside the
+ * class while the checking of these input variables and the corresponding state
+ * changes happen inside the state machine.
+ */
 class NonSessionHandler
 {
 public:
@@ -49,10 +73,13 @@ public:
 	constexpr static const char* OSC_SIG_SPECIAL{"/kontrolf1/special/"};
 	constexpr static const char* OSC_SIG_KNOB{"/kontrolf1/knob/"};
 	constexpr static const char* OSC_SIG_FADER{"/kontrolf1/fader/"};
-	
+
 	constexpr static float OSC_BTN_PRESSED{1.f};
 	constexpr static float OSC_BTN_RELEASED{0.f};
 
+	/**
+	 * States of the internal state machine
+	 */
 	enum class State : int
 	{
 		NO_SESSION,
@@ -66,6 +93,9 @@ public:
 		FAILED
 	};
 
+	/**
+	 * Create a new instance and OSC server thread
+	 */
 	template <typename string_type>
 	inline NonSessionHandler(const string_type& c2s_addr,
 	                         std::string_view executable_name,
@@ -80,17 +110,25 @@ public:
 		s2c_thread.start();
 	}
 	NonSessionHandler(const NonSessionHandler&) = delete;
+	// FIXME: Why do we have these two destructors?
 #ifndef DEBUG
 	inline ~NonSessionHandler() = default;
 #else
 	~NonSessionHandler();
 #endif
 
+	/**
+	 * Return an address to send messages to or from the internal OSC server
+	 */
 	operator lo::Address() const
 	{
 		return {s2c_thread.url()};
 	}
 
+	/**
+	 * Check, if the state machine is in a state where it is ready to process
+	 * input events
+	 */
 	inline bool session_is_ready() const noexcept
 	{
 		switch (session_state) {
@@ -111,25 +149,64 @@ public:
 
 	void start_session();
 
+	/**
+	 * Return the amount of peers discovered via NSM
+	 */
 	inline size_t discovered_peers() const noexcept
 	{
 		return peers.size();
 	}
+	/**
+	 * Get the {@link NonPeer} with the corresponding client id
+	 *
+	 * @throws std::out_of_range if the peer with the client_id does not exist
+	 */
 	inline const NonPeer& peer_at(const std::string& client_id) const
 	{
 		return peers.at(client_id);
 	}
 
+	/**
+	 * Broadcast an input event to all Non Peers
+	 *
+	 * This is the default way to send input events to Non Peers, but maybe we
+	 * can improve this by keeping track of which input is associated with with
+	 * signals.
+	 */
 	void broadcast_input_event(const F1InputChange& changes);
 
 private:
+	/**
+	 * A single step in the state machine
+	 *
+	 * It first acquires a lock to ensure only one state machine step is
+	 * executed at the same time. It then checks for the current state and acts
+	 * depending on the state. Some states cause the state machine to be rerun
+	 * immediately.
+	 */
 	void step_state_machine();
 	void register_callbacks();
 
+	/** @name Senders
+	 *
+	 * @brief Methods to send message to the Non Session Manager
+	 *
+	 * These methods only send messages to the Non Session Manager, but do not
+	 * change the state of the state machine.
+	 */
+	//@{
 	void send_announce();
 	void send_hello();
 	void send_signal_list();
+	//@}
 
+	/** @name Incoming message handlers
+	 *
+	 * @brief handlers for incoming messages
+	 *
+	 * These methods are handlers for incoming messages from NSM and Non Peers.
+	 */
+	//@{
 	template <typename... T>
 	void handle_reply(T... args);
 	template <typename... T>
@@ -139,17 +216,42 @@ private:
 	                 std::string_view display_name,
 	                 std::string_view client_id);
 	void handle_save();
+	/**
+	 * Handle incoming /signal/list
+	 *
+	 * This method responds by sending all signals we have
+	 *
+	 * Not to be confused with {@link handle_signal_list_reply()} which handles
+	 * incoming replies to a /signal/list which we have sent to the peer using
+	 * {@link send_signal_list()}.
+	 */
 	void handle_signal_list(const lo::Address& peer);
+	/**
+	 * Handle incoming replies to /signal/list
+	 *
+	 * This method adds all received signals to the {@link NonPeer}'s signal
+	 * list.
+	 *
+	 * Not to be confused with {@link handle_signal_list()} which handles
+	 * incoming /signal/list requests rather than replies to requests we have
+	 * sent out using {@link send_signal_list()}.
+	 */
 	void handle_signal_list_reply(std::string_view signal_path,
 	                              float min,
 	                              float max,
 	                              float default_value);
+	//@}
 
+	/// @name Misc methods
+	//@{
 	void assert_server_announce_matches_required_capabilities(
 	  std::string_view capabilities);
 
 	inline bool peer_is_known(const std::string& client_id) const;
+	//@}
 
+	/// @name Private members
+	//@{
 	lo::ServerThread s2c_thread;
 	const lo::Address c2s_addr;
 	const std::string_view executable_name;
@@ -167,4 +269,5 @@ private:
 
 	size_t handshaked_peers{0};
 	decltype(peers)::iterator current_handshaking_peer{peers.end()};
+	//@}
 };
