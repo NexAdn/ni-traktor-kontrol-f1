@@ -42,6 +42,7 @@ namespace colors
 	};
 } // namespace colors
 
+void drop_privileges();
 int exec_driver(int fd, const char* nsm_url, std::string_view exe_name);
 void set_colors(F1HidDev dev, const F1InputChange& input = {});
 } // namespace
@@ -86,6 +87,7 @@ int main(int argc, char** argv)
 		    && devinfo.product == F1_PRODUCT_ID) {
 			std::cout << "[KontrolF1] Found device!\n";
 
+			drop_privileges();
 			return exec_driver(fd, nsm_url, exe_name);
 		}
 
@@ -96,12 +98,25 @@ int main(int argc, char** argv)
 
 namespace
 {
+void drop_privileges()
+{
+	debug("Dropping privileges");
+	if (setgid(getgid()) == -1) {
+		std::cerr << "Failed to drop group!\n";
+		exit(1);
+	}
+	if (setuid(getuid()) == -1) {
+		std::cerr << "Failed to drop uid!\n";
+		exit(1);
+	}
+}
+
 int exec_driver(int fd, const char* nsm_url, std::string_view exe_name)
 {
 	debug("Starting driver core\n");
 
 	F1HidDev dev(fd);
-	NonSessionHandler nsh(nsm_url, exe_name, F1Default::signals);
+	NonSessionHandler nsh(nsm_url, exe_name, F1Default::signals, true);
 
 	std::cout << "[KontrolF1] Connecting to NSM\n";
 	nsh.start_session();

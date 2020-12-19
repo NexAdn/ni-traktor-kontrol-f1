@@ -24,3 +24,19 @@ target_link_libraries(osc_driver
 	f1hid
 	nonsession
 )
+
+add_executable(jack_test
+	test_jack.cpp
+)
+target_include_directories(jack_test
+	PUBLIC
+		..
+)
+target_compile_features(jack_test
+	PUBLIC
+		cxx_std_17
+)
+target_link_libraries(jack_test
+	jack
+	Threads::Threads
+)

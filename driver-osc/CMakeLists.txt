@@ -6,6 +6,7 @@ option(WITH_TESTS "Enable unit tests" ON)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 pkg_check_modules(liblo REQUIRED IMPORTED_TARGET liblo)
+pkg_check_modules(jack REQUIRED IMPORTED_TARGET jack)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -Wno-sign-compare -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
