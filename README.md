@@ -18,6 +18,9 @@ The inputs and outputs of the device have been reverse engineered.
 The features are still missing and are probably not gonna be added.
 
 A [Non](https://non.tuxfamily.org)-compatible OSC driver implementation is being developed (see [driver-osc](driver-osc/README.md)).
+Support for sending some of the inputs via [JACK](https://jackaudio.org/) MIDI has been implemented.
+
+The current driver implementation has support for dropping privileges (the driver needs to be started as root to access the hidraw device files, but can run as non-root after successfully opening the right device file).
 
 ## Main tools used for reverse engineering
   * vim/Okular (Notes taking)
