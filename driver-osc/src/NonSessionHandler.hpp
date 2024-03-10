@@ -47,8 +47,6 @@ public:
 	constexpr static std::chrono::seconds SESSION_HANDSHAKE_TIMEOUT{5};
 
 	constexpr static const char* NSM_ANNOUNCE{"/nsm/server/announce"};
-	constexpr static const char* NSM_SESSION_LOADED{
-	  "/nsm/client/session_is_loaded"};
 	constexpr static const char* NSM_BROADCAST{"/nsm/server/broadcast"};
 	constexpr static const char* NSM_INCOMING_BROADCAST{
 	  "/nsm/client/broadcast"};
@@ -86,7 +84,6 @@ public:
 		HANDSHAKE_START,
 		HANDSHAKE_AWAIT_REPLY,
 		SESSION_AWAIT_OPEN,
-		SESSION_AWAIT_LOADED,
 		HELLO_START,
 		PEER_AWAIT_SIGNAL_LIST,
 		RUNNING,
@@ -134,7 +131,6 @@ public:
 		switch (session_state) {
 		case State::RUNNING:
 		case State::SESSION_AWAIT_OPEN:
-		case State::SESSION_AWAIT_LOADED:
 		case State::HELLO_START:
 			return true;
 		default:

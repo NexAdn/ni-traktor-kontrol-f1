@@ -201,11 +201,7 @@ void NonSessionHandler::step_state_machine()
 		debug("State: HANDSHAKE_AWAIT_REPLY\n");
 
 		if (handshake_complete) {
-			if (session_loaded) {
-				session_state = State::SESSION_AWAIT_OPEN;
-			} else {
-				session_state = State::SESSION_AWAIT_LOADED;
-			}
+			session_state = State::SESSION_AWAIT_OPEN;
 			rerun_state_machine_immediately = true;
 		}
 		break;
@@ -217,26 +213,7 @@ void NonSessionHandler::step_state_machine()
 		if (!project_opened)
 			break;
 
-		if (session_loaded) {
-			session_state = State::HELLO_START;
-		} else {
-			session_state = State::SESSION_AWAIT_LOADED;
-		}
-		rerun_state_machine_immediately = true;
-		break;
-	}
-
-	case State::SESSION_AWAIT_LOADED: {
-		debug("State: SESSION_AWAIT_LOADED\n");
-
-		if (!session_loaded)
-			break;
-
-		if (project_opened) {
-			session_state = State::HELLO_START;
-		} else {
-			session_state = State::SESSION_AWAIT_LOADED;
-		}
+		session_state = State::HELLO_START;
 		rerun_state_machine_immediately = true;
 		break;
 	}
@@ -346,11 +323,6 @@ void NonSessionHandler::register_callbacks()
 	s2c_thread.add_method(NSM_SAVE, "", [this](lo::Message msg) {
 		debug(std::string{"Received "} + NSM_SAVE + '\n');
 		handle_save();
-	});
-	s2c_thread.add_method(NSM_SESSION_LOADED, "", [this](lo::Message msg) {
-		debug(std::string{"Received "} + NSM_SESSION_LOADED + '\n');
-		session_loaded = true;
-		step_state_machine();
 	});
 	s2c_thread.add_method(OSC_SIGNAL_LIST, "", [this](lo::Message msg) {
 		debug(std::string{"Received "} + OSC_SIGNAL_LIST + '\n');

@@ -79,8 +79,6 @@ public:
 		debug("Opening project and sending all ready\n");
 		lo::Address{nsh}.send_from(server_thread, NonSessionHandler::NSM_OPEN,
 		                           "sss", "path", "display_name", "client_id");
-		lo::Address{nsh}.send_from(server_thread,
-		                           NonSessionHandler::NSM_SESSION_LOADED, "");
 		short_sleep<>();
 	}
 
@@ -227,7 +225,7 @@ TEST(NonSessionHandler, fails_on_missing_required_server_capabilities)
 	ASSERT_TRUE(nsh.session_has_failed());
 }
 
-TEST(NonSessionHandler, starts_hello_after_open_and_session_loaded)
+TEST(NonSessionHandler, starts_hello_after_open)
 {
 	ServerEmulation srv;
 	NonSessionHandler nsh(srv.server_uri, "/invalid/path/exe");
@@ -239,8 +237,6 @@ TEST(NonSessionHandler, starts_hello_after_open_and_session_loaded)
 	lo::Address{nsh}.send_from(srv.server_thread, NonSessionHandler::NSM_OPEN,
 	                           "sss", "projectpath", "display_name",
 	                           "client_id");
-	lo::Address{nsh}.send_from(srv.server_thread,
-	                           NonSessionHandler::NSM_SESSION_LOADED, "");
 	short_sleep<>();
 
 	ASSERT_EQ(1, srv.received_broadcasts.size());
