@@ -14,7 +14,7 @@
 #include "JackClient.hpp"
 #include "NonPeer.hpp"
 
-class F1InputChange;
+struct F1InputChange;
 class JackClient;
 
 /**

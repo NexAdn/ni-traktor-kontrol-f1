@@ -11,7 +11,7 @@
 #include <jack/ringbuffer.h>
 
 class NonSignal;
-class F1InputChange;
+struct F1InputChange;
 
 /**
  * A connection to JACK as a client
