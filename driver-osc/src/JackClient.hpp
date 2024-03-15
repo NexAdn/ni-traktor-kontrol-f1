@@ -114,7 +114,7 @@ private:
 	jack_ringbuffer_ptr input_buf{jack_ringbuffer_create(INPUT_BUF_SIZE),
 	                              jack_ringbuffer_free};
 
-	uint8_t midi_channel;
+	uint8_t midi_channel{0};
 
 	size_t created_midi_bytes{0};
 	size_t sent_midi_bytes{0};
