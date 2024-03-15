@@ -1,7 +1,7 @@
 #pragma once
 
-#include <exception>
 #include <ostream>
+#include <stdexcept>
 
 #include "F1InputState.hpp"
 
@@ -102,11 +102,9 @@ private:
  *
  * Details of the error which occured are returned by {@link what()}.
  */
-class F1HidDevException : public std::exception
+class F1HidDevException : public std::runtime_error
 {
 public:
-	inline const char* what() const noexcept
-	{
-		return "F1HidDevException";
-	}
+	F1HidDevException(const std::string& msg) : std::runtime_error(msg)
+	{}
 };
