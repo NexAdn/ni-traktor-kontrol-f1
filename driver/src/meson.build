@@ -39,4 +39,18 @@ exe = executable(
 	install: true
 )
 
+devtest_exe = executable(
+	'tkf1-devtest',
+	[
+		'devtest.cpp',
+	],
+	link_with: [
+		common_lib,
+	],
+	include_directories: [
+		src_include,
+	],
+	install: true
+)
+
 # vi: noexpandtab
