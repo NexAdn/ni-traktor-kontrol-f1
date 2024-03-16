@@ -1,6 +1,8 @@
 catch_dep = dependency('catch2-with-main', required: true)
 
 tests = files([
+	'tkf1/F1Device.cpp',
+	'io/FileDescriptor.cpp',
 	'io/MidiEvent.cpp',
 	'io/MidiStream.cpp',
 	'io/Ringbuffer.cpp',

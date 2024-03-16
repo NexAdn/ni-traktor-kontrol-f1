@@ -2,9 +2,11 @@ src_include = include_directories('.')
 
 srcs = files([
 	'io/JackWrapper.cpp',
+	'io/HidDevice.cpp',
 	'io/MidiEvent.cpp',
 	'io/MidiStream.cpp',
 	'io/RingbufferIterator.cpp',
+	'tkf1/F1Device.cpp',
 ])
 
 common_lib = static_library(
