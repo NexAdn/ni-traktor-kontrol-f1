@@ -1,5 +1,9 @@
 #include <cassert>
 
+#ifndef NDEBUG
+#include <iomanip>
+#endif
+
 #include <jack/midiport.h>
 
 #include "F1InputState.hpp"
@@ -129,6 +133,14 @@ inline void JackClient::write_midi(byte_t status, byte_t v1, byte_t v2)
 	  jack_ringbuffer_write(rb, reinterpret_cast<const char*>(midi_event), 3);
 	assert(bytes_written == 3);
 	created_midi_bytes += 3;
+#ifndef NDEBUG
+	const auto fmtflags = std::cout.flags();
+	std::cout << std::hex << std::setfill('0') << std::setw(2)
+	          << static_cast<int>(status) << ' ' << std::setw(2)
+	          << static_cast<int>(v1) << ' ' << std::setw(2)
+	          << static_cast<int>(v2) << '\n';
+	std::cout.flags(fmtflags);
+#endif
 	debug(std::string{"CM:\t"} + std::to_string(created_midi_bytes) + "\tSM:\t"
 	      + std::to_string(sent_midi_bytes) + "\tBS:\t"
 	      + std::to_string(bytes_in_input_buffer()));
