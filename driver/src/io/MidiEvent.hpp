@@ -29,57 +29,42 @@ public:
 		SYSTEM_MESSAGE = 0xf0
 	};
 
+	constexpr MidiEvent() = default;
+	constexpr MidiEvent(
+		Type type,
+		std::uint8_t channel,
+		std::uint8_t data1,
+		std::uint8_t data2
+	) :
+		type(type), channel(channel), data({.raw = {data1, data2}})
+	{
+	}
+
+	MidiEvent(const MidiEvent&) = default;
+	MidiEvent& operator=(const MidiEvent&) = default;
+	MidiEvent(MidiEvent&&) = default;
+	MidiEvent& operator=(MidiEvent&&) = default;
+	~MidiEvent() = default;
+
 	constexpr static MidiEvent
 	note_off(std::string_view name, byte velocity, byte channel = 0)
 	{
-		return {
-			.type = Type::NOTE_OFF,
-			.channel = channel,
-			.data =
-				{
-					.note =
-						{
-							.note = note_from_name(
-								name
-							),
-							.velocity = velocity,
-						},
-				},
+		return MidiEvent{
+			Type::NOTE_OFF, channel, note_from_name(name), velocity
 		};
 	}
 	constexpr static MidiEvent
 	note_on(std::string_view name, byte velocity, byte channel = 0)
 	{
-		return {
-			.type = Type::NOTE_ON,
-			.channel = channel,
-			.data =
-				{
-					.note =
-						{
-							.note = note_from_name(
-								name
-							),
-							.velocity = velocity,
-						},
-				},
+		return MidiEvent{
+			Type::NOTE_ON, channel, note_from_name(name), velocity
 		};
 	}
 	constexpr static MidiEvent
 	control_change(byte controller, byte value, byte channel = 0)
 	{
-		return {
-			.type = Type::CONTROL_CHANGE,
-			.channel = channel,
-			.data =
-				{
-					.controller =
-						{
-							.controller =
-								controller,
-							.value = value,
-						},
-				},
+		return MidiEvent{
+			Type::CONTROL_CHANGE, channel, controller, value
 		};
 	}
 
@@ -103,11 +88,10 @@ public:
 
 		++raw_it;
 		if (event.type == MidiEvent::Type::SYSTEM_MESSAGE) {
-			event.control_message_data.emplace();
 			for (; raw_it != end &&
 			       !is_status_byte(static_cast<byte>(*raw_it));
 			     ++raw_it)
-				event.control_message_data->push_back(*raw_it);
+				;
 		} else {
 			// NOLINTBEGIN(*-pointer-arithmetic,*-union-access)
 			for (auto* data_it = event.data.raw.begin();
@@ -214,7 +198,6 @@ public:
 			uint16_t bend;
 		} pitch_bend;
 	} data;
-	std::optional<std::vector<byte>> control_message_data{};
 
 private:
 	// NOLINTBEGIN(*-magic-numbers)

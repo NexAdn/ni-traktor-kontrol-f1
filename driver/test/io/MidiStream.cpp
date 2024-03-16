@@ -66,7 +66,8 @@ TEST_CASE("MidiStream", "[midistream][io]")
 		SECTION("Dereferences to first MidiEvent")
 		{
 			const MidiEvent expected{
-				MidiEvent::Type::NOTE_OFF, 0, {{0x01, 0x00}}};
+				MidiEvent::Type::NOTE_OFF, 0, 0x01, 0x00
+			};
 			REQUIRE(*iter == expected);
 		}
 	}
@@ -78,7 +79,8 @@ TEST_CASE("MidiStream", "[midistream][io]")
 		SECTION("Dereferences to next MidiEvent")
 		{
 			const MidiEvent expected{
-				MidiEvent::Type::NOTE_ON, 0, {{0x01, 0x7f}}};
+				MidiEvent::Type::NOTE_ON, 0, 0x01, 0x7f
+			};
 			REQUIRE(*iter == expected);
 		}
 
@@ -95,12 +97,12 @@ TEST_CASE("MidiStream", "[midistream][io]")
 	SECTION("Iterating through until end parses all MidiEvents")
 	{
 		const std::vector<MidiEvent> expected{
-			{MidiEvent::Type::NOTE_OFF, 0, {{0x01, 0x00}}},
-			{MidiEvent::Type::NOTE_ON, 0, {{0x01, 0x7f}}},
-			{MidiEvent::Type::CONTROL_CHANGE, 0, {{0x04, 0x7f}}},
-			{MidiEvent::Type::CONTROL_CHANGE, 0, {{0x05, 0x60}}},
-			{MidiEvent::Type::CONTROL_CHANGE, 0, {{0x04, 0x00}}},
-			{MidiEvent::Type::CONTROL_CHANGE, 0, {{0x05, 0x00}}},
+			{MidiEvent::Type::NOTE_OFF, 0, 0x01, 0x00},
+			{MidiEvent::Type::NOTE_ON, 0, 0x01, 0x7f},
+			{MidiEvent::Type::CONTROL_CHANGE, 0, 0x04, 0x7f},
+			{MidiEvent::Type::CONTROL_CHANGE, 0, 0x05, 0x60},
+			{MidiEvent::Type::CONTROL_CHANGE, 0, 0x04, 0x00},
+			{MidiEvent::Type::CONTROL_CHANGE, 0, 0x05, 0x00},
 		};
 
 		auto expected_iter = expected.begin();

@@ -31,16 +31,10 @@ std::ostream& operator<<(std::ostream& os, const MidiEvent& e)
 	}
 	os << ' ' << std::hex << static_cast<int>(e.channel) << ':';
 
-	if (e.type == MidiEvent::Type::SYSTEM_MESSAGE) {
-		assert(e.control_message_data);
-		for (MidiEvent::byte b : *(e.control_message_data))
-			os << ' ' << static_cast<int>(b);
-	} else {
-		// NOLINTBEGIN(*-union-access)
-		os << ' ' << static_cast<int>(e.data.raw[0]) << '/'
-		   << static_cast<int>(e.data.raw[1]);
-		// NOLINTEND(*-union-access)
-	}
+	// NOLINTBEGIN(*-union-access)
+	os << ' ' << static_cast<int>(e.data.raw[0]) << '/'
+	   << static_cast<int>(e.data.raw[1]);
+	// NOLINTEND(*-union-access)
 	os << ']' << std::dec;
 	return os;
 }

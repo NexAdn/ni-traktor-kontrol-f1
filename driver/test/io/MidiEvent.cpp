@@ -125,7 +125,7 @@ TEST_CASE("MidiEvent parses CC MIDI events", "[midievent][parser]")
 
 TEST_CASE("MidiEvent compares", "[midievent]")
 {
-	const MidiEvent lhs{MidiEvent::Type::NOTE_OFF, 4, {{12, 14}}};
+	const MidiEvent lhs{MidiEvent::Type::NOTE_OFF, 4, 12, 14};
 	MidiEvent rhs = lhs;
 
 	SECTION("Compares equal on all members equal")
