@@ -1,0 +1,6 @@
+.cache/
+.nvimrc
+.vimrc
+build/
+Release/
+compile_commands.json

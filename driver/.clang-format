@@ -1,0 +1,77 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+AccessModifierOffset: -8
+AlignAfterOpenBracket: BlockIndent
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: Inline
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: true
+  AfterExternBlock: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyNamespace: true
+# clang-format 16
+#BreakAfterAttributes: Always
+BreakBeforeBraces: Linux
+BreakBeforeInheritanceComma: false
+BreakInheritanceList: AfterColon
+BreakConstructorInitializers: AfterColon
+BreakAfterJavaFieldAnnotations: false
+ColumnLimit: 80
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth: 8
+DisableFormat: false
+PackConstructorInitializers: NextLine
+FixNamespaceComments: true
+IncludeBlocks: Preserve
+IndentGotoLabels: false
+IndentPPDirectives: AfterHash
+IndentExternBlock: NoIndent
+IndentWidth: 8
+InsertTrailingCommas: Wrapped
+# clang-format 16
+#InsertNewlineAtEof: true
+# clang-format 16
+#IntegerLiteralSeparator:
+#  Binary: 4
+#  Decimal: 3
+#  Hex: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+# clang-format 16
+#LineEnding: LF
+UseCRLF: false
+PointerAlignment: Left
+PPIndentWidth:   1
+QualifierAlignment: Left
+ReferenceAlignment: Pointer
+ReflowComments: true
+ShortNamespaceLines: 3
+SpaceAfterCStyleCast: true
+SpaceAroundPointerQualifiers: Default
+BitFieldColonSpacing: Both
+TabWidth: 8
+UseTab: ForContinuationAndIndentation
+WhitespaceSensitiveMacros:
+  - STRINGIZE
+  - PP_STRINGIZE
+  - BOOST_PP_STRINGIZE
+  - NS_SWIFT_NAME
+  - CF_SWIFT_NAME
+
+# vi: ft=yaml
