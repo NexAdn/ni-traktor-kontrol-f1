@@ -25,7 +25,7 @@ struct process_metadata
 	volatile size_t frames_processed{0};
 };
 
-volatile size_t processed{0};
+// volatile size_t processed{0};
 
 int process(jack_nframes_t nframes, void* arg)
 {
