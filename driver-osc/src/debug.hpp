@@ -38,7 +38,7 @@ void debug_int(std::string_view str, std::string_view file, size_t line)
 	std::cout << "[DBG] [" DBG_MODULE_NAME ":" << file << ':' << line << "] "
 	          << str;
 #else
-	std::cout << "[DBG] " << file << ":" << line << ": " << str;
+	std::cout << "[DBG] " << file << ":" << line << ": " << str << std::endl;
 #endif
 }
 #else

@@ -13,7 +13,7 @@ const F1HidDev::input& F1HidDev::read()
 	ssize_t res = ::read(fd, raw_input, sizeof(raw_input));
 
 	if (res < 0) {
-		throw F1HidDevException{};
+		throw F1HidDevException{"read() failed"};
 	}
 
 	input_state.report_id = raw_input[0];
@@ -70,5 +70,5 @@ void F1HidDev::write(const output& output) const
 	ssize_t res = ::write(fd, data.data(), data.size());
 
 	if (res != data.size())
-		throw F1HidDevException{};
+		throw F1HidDevException{"write() failed"};
 }

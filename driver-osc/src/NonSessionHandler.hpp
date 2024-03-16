@@ -11,9 +11,11 @@
 
 #include <lo/lo_cpp.h>
 
+#include "JackClient.hpp"
 #include "NonPeer.hpp"
 
-class F1InputChange;
+struct F1InputChange;
+class JackClient;
 
 /**
  * Main interface to the Non Session Manager and implementation of NSM related
@@ -96,11 +98,13 @@ public:
 	template <typename string_type>
 	inline NonSessionHandler(const string_type& c2s_addr,
 	                         std::string_view executable_name,
-	                         const NonSignalList& signals = {})
+	                         const NonSignalList& signals = {},
+	                         bool jack_midi = false)
 	    : s2c_thread(nullptr)
 	    , c2s_addr(c2s_addr)
 	    , executable_name(executable_name)
 	    , signals(signals)
+	    , jack_midi(jack_midi)
 	{
 		assert(s2c_thread.is_valid());
 		register_callbacks();
@@ -246,7 +250,7 @@ private:
 	inline bool peer_is_known(const std::string& client_id) const;
 	//@}
 
-	/// @name Private members
+	/// @name OSC/Non Stuff
 	//@{
 	lo::ServerThread s2c_thread;
 	const lo::Address c2s_addr;
@@ -265,5 +269,11 @@ private:
 
 	size_t handshaked_peers{0};
 	decltype(peers)::iterator current_handshaking_peer{peers.end()};
+	//@}
+
+	/// @name Jack Stuff
+	//@{
+	bool jack_midi;
+	std::unique_ptr<JackClient> jack;
 	//@}
 };

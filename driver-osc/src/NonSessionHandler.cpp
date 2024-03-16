@@ -99,6 +99,11 @@ void NonSessionHandler::broadcast_input_event(const F1InputChange& changes)
 	lo::Bundle bundle;
 	std::vector<lo::Message> messages;
 
+	if (jack_midi) {
+		assert(jack);
+		jack->push_event(changes);
+	}
+
 	for (const auto& btn : changes.pressed_buttons.matrix) {
 		auto& msg = messages.emplace_back();
 		std::string path = std::string{OSC_SIG_MTX} + std::to_string(btn);
@@ -374,6 +379,9 @@ void NonSessionHandler::send_signal_list()
 	current_handshaking_peer->second.fetch_signal_list();
 }
 
+/**
+ * @TODO Get rid of magic number
+ */
 void NonSessionHandler::handle_open(std::string_view project_path,
                                     std::string_view display_name,
                                     std::string_view client_id)
@@ -381,11 +389,29 @@ void NonSessionHandler::handle_open(std::string_view project_path,
 	// We have nothing so save, yet, so we have nothing to open
 	this->client_id = client_id;
 
-	debug("NonSessionHandler::handle_open(): Sending /reply\n");
-	c2s_addr.send_from(s2c_thread, "/reply", "ss", NSM_OPEN, "NOP");
+	try {
+		if (jack_midi) {
+			debug("NonSessionHandler::handle_open(): Connecting JackClient");
+			jack.reset(new JackClient(client_id));
+			jack->connect();
+		}
 
-	project_opened = true;
-	step_state_machine();
+		debug("NonSessionHandler::handle_open(): Sending /reply\n");
+		c2s_addr.send_from(s2c_thread, "/reply", "ss", NSM_OPEN, "NOP");
+
+		project_opened = true;
+		step_state_machine();
+	}
+	catch (JackClientException& e) {
+		lo::Message msg;
+		msg.add_string(NSM_OPEN);
+		msg.add_int32(-10);
+		msg.add_string(std::string{"JackClientException whilst opening: "}
+		               + e.what());
+		c2s_addr.send_from(s2c_thread, "/error", msg);
+
+		session_state = State::FAILED;
+	}
 }
 
 void NonSessionHandler::handle_save()
