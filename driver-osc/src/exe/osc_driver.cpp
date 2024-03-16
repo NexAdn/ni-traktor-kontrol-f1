@@ -1,4 +1,7 @@
+#include <cerrno>
+#include <cstring>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -11,6 +14,7 @@
 #include <unistd.h>
 
 #include "F1HidDev.hpp"
+#include "JackClient.hpp"
 #include "NonSessionHandler.hpp"
 
 #define DBG_MODULE_NAME "DRV_EXE"
@@ -52,10 +56,8 @@ int main(int argc, char** argv)
 	const char* nsm_url = getenv("NSM_URL");
 	const char* exe_name = argv[0];
 
-	if (!nsm_url) {
-		std::cerr
-		  << "No NSM_URL provided. No session management possible. Aborting.\n";
-		return 1;
+	if (nsm_url) {
+		std::clog << "Enabling Non session management\n";
 	}
 
 	int fd;
@@ -69,9 +71,14 @@ int main(int argc, char** argv)
 		debug(std::string{"  open() returned with code "} + std::to_string(fd)
 		      + '\n');
 		if (fd < 0) {
-			std::cerr << "Failed to open " << HIDRAW_PREFIX << i << std::endl
-			          << "Aborting\n";
-			return 2;
+			std::clog << "Failed to open " << HIDRAW_PREFIX << i << '\n'
+			          << strerror(errno) << '\n';
+			switch (errno) {
+			case EACCES:
+				continue;
+			default:
+				return 2;
+			}
 		}
 
 		debug("  Retrieving devinfo\n");
@@ -87,8 +94,17 @@ int main(int argc, char** argv)
 		    && devinfo.product == F1_PRODUCT_ID) {
 			std::cout << "[KontrolF1] Found device!\n";
 
-			drop_privileges();
-			return exec_driver(fd, nsm_url, exe_name);
+			if (getuid() == 0) {
+				drop_privileges();
+			}
+			try {
+				return exec_driver(fd, nsm_url, exe_name);
+			}
+			catch (F1HidDevException& e) {
+				std::clog << "Hiddev error: " << e.what() << '\n';
+				std::clog << strerror(errno) << '\n';
+				return 1;
+			}
 		}
 
 		debug("  Device mismatch. Trying next device.\n");
@@ -116,17 +132,28 @@ int exec_driver(int fd, const char* nsm_url, std::string_view exe_name)
 	debug("Starting driver core\n");
 
 	F1HidDev dev(fd);
-	NonSessionHandler nsh(nsm_url, exe_name, F1Default::signals, true);
-
-	std::cout << "[KontrolF1] Connecting to NSM\n";
-	nsh.start_session();
-	while (!nsh.session_is_ready() && !nsh.session_has_failed()) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+	std::unique_ptr<NonSessionHandler> nsh;
+	std::unique_ptr<JackClient> jack;
+	if (nsm_url) {
+		nsh = std::make_unique<NonSessionHandler>(
+		  nsm_url, exe_name, F1Default::signals, true);
+	} else {
+		jack = std::make_unique<JackClient>("Traktor Kontrol F1");
 	}
 
-	if (nsh.session_has_failed()) {
-		std::cerr << "[KontrolF1] NSM session has failed. Aborting\n";
-		return 4;
+	std::cout << "[KontrolF1] Connecting to NSM\n";
+	if (nsh) {
+		nsh->start_session();
+		while (!nsh->session_is_ready() && !nsh->session_has_failed()) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		if (nsh->session_has_failed()) {
+			std::cerr << "[KontrolF1] NSM session has failed. Aborting\n";
+			return 4;
+		}
+	} else {
+		jack->connect();
 	}
 
 	set_colors(dev);
@@ -156,7 +183,11 @@ int exec_driver(int fd, const char* nsm_url, std::string_view exe_name)
 		input_diff.pressed_buttons.stop = new_pressed_stop;
 		input_diff.released_buttons.stop = new_released_stop;
 
-		nsh.broadcast_input_event(input_diff);
+		if (nsh) {
+			nsh->broadcast_input_event(input_diff);
+		} else {
+			jack->push_event(input_diff);
+		}
 		set_colors(dev, input_diff);
 
 		last = current;
