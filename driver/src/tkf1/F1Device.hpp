@@ -283,6 +283,13 @@ considers the top left button as (0, 0) and the bottom right button as (3, 3).
 	static std::pair<SegmentChar, SegmentChar>
 	num_to_segments(std::uint8_t num);
 
+	constexpr static std::tuple<Brightness, Brightness, Brightness>
+	color2rgb(const ButtonColor& color)
+	{
+		const auto& [b, r, g] = color;
+		return std::make_tuple(r, g, b);
+	}
+
 	/**
 	 * Convert 7-bit RGB values to the internal representation
 	 */
