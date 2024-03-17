@@ -1,4 +1,3 @@
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -81,27 +80,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 					event, dev->output_state()
 				);
 				if (midi) {
-					std::cout << "Writebuf: "
-						  << jack->write_bufsize()
-						  << '\n';
-					const auto& bytes = midi->to_bytes();
-					const auto fmtflags = std::cout.flags();
-					std::cout << std::hex
-						  << std::setfill('0')
-						  << std::setw(2)
-						  << static_cast<unsigned>(
-							     bytes.at(0)
-						     )
-						  << ' ' << std::setw(2)
-						  << static_cast<unsigned>(
-							     bytes.at(1)
-						     )
-						  << ' ' << std::setw(2)
-						  << static_cast<unsigned>(
-							     bytes.at(2)
-						     )
-						  << '\n';
-					std::cout.flags(fmtflags);
 					*jack << *midi;
 				}
 			});
