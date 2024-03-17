@@ -7,6 +7,7 @@ srcs = files([
 	'io/MidiStream.cpp',
 	'io/RingbufferIterator.cpp',
 	'tkf1/F1Device.cpp',
+	'tkf1/IOMapper.cpp',
 ])
 
 common_lib = static_library(
