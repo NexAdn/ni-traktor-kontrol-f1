@@ -7,15 +7,17 @@
 
 #include <jack/types.h>
 
+class MidiEvent;
+
 class JackWrapper final
 {
 	class Impl;
 
 public:
 	constexpr static const char* DEFAULT_CLIENT_NAME = "Traktor Kontrol F1";
+	constexpr static std::size_t IN_BUF_SIZE{8192U};
+	constexpr static std::size_t OUT_BUF_SIZE{128U};
 
-	using write_callback = std::function<int(void*, jack_nframes_t)>;
-	using read_callback = std::function<int(void*, jack_nframes_t)>;
 	using xrun_callback = std::function<int()>;
 
 	explicit JackWrapper(
@@ -27,12 +29,22 @@ public:
 	JackWrapper& operator=(JackWrapper&&) = delete;
 	~JackWrapper();
 
-	void set_write_callback(write_callback write_cb);
-	void set_read_callback(read_callback read_cb);
 	void set_xrun_callback(xrun_callback xrun_cb);
 
 	void activate();
 	void deactivate();
+
+	[[nodiscard]] std::size_t read_bufsize() const noexcept;
+	[[nodiscard]] std::size_t write_bufsize() const noexcept;
+
+	/**
+	 * Send a MIDI event to the output buffer
+	 */
+	JackWrapper& operator<<(const MidiEvent& event);
+	/**
+	 * Read a MIDI event from the input buffer
+	 */
+	JackWrapper& operator>>(MidiEvent& event);
 
 private:
 	std::unique_ptr<Impl> p_impl;

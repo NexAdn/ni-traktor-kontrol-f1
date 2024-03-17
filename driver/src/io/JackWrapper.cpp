@@ -1,9 +1,16 @@
 #include <cassert>
+#include <cstddef>
 #include <functional>
+#include <iterator>
 
 #include "JackWrapper.hpp"
+#include "io/MidiEvent.hpp"
+#include "io/Ringbuffer.hpp"
+#include "io/RingbufferIterator.hpp"
 
 #include <jack/jack.h>
+#include <jack/midiport.h>
+#include <jack/ringbuffer.h>
 #include <jack/types.h>
 
 using jack_client_dtor = std::function<void(jack_client_t*)>;
@@ -15,12 +22,18 @@ using jack_port_ptr = std::unique_ptr<jack_port_t, jack_port_dtor>;
 class JackWrapper::Impl
 {
 public:
+	using write_callback_t = std::function<int(void*, jack_nframes_t)>;
+	using read_callback_t = std::function<int(void*, jack_nframes_t)>;
+
 	explicit Impl(const std::string& client_name)
 	{
 		init_client(client_name);
 		init_ports();
 		init_process_callback();
 		init_xrun_callback();
+
+		read_cb = read_callback();
+		write_cb = write_callback();
 	}
 
 	Impl(const Impl&) = delete;
@@ -159,16 +172,66 @@ public:
 		};
 	}
 
+	read_callback_t read_callback()
+	{
+		return [this](void* buf, jack_nframes_t) -> int {
+			for (jack_nframes_t i = 0;
+			     i < jack_midi_get_event_count(buf);
+			     ++i) {
+				jack_midi_event_t jack_event;
+				const int res = jack_midi_event_get(
+					&jack_event, buf, i
+				);
+				if (res != 0)
+					return 1;
+
+				// NOLINTBEGIN(*-pointer-arithmetic)
+				for (jack_midi_data_t* i = jack_event.buffer;
+				     i < jack_event.buffer + jack_event.size;
+				     ++i) {
+					if (in_buf.full())
+						return 1;
+
+					in_buf.push(*i);
+				}
+				// NOLINTEND(*-pointer-arithmetic)
+			}
+
+			return 0;
+		};
+	}
+
+	write_callback_t write_callback()
+	{
+		return [this](void* buf, jack_nframes_t nframes) -> int {
+			jack_midi_clear_buffer(buf);
+			for (jack_nframes_t i = 0;
+			     not out_buf.empty() && i < nframes / 3;
+			     ++i) {
+				MidiEvent event = out_buf.pop();
+				auto bytes = event.to_bytes();
+				const int res = jack_midi_event_write(
+					buf, 0, bytes.data(), bytes.size()
+				);
+				assert(res == 0);
+			}
+
+			return 0;
+		};
+	}
+
 	jack_client_ptr client{nullptr, jack_client_deleter()};
 	bool active{false};
 	jack_port_ptr midi_in{nullptr};
 	jack_port_ptr midi_out{nullptr};
 
-	JackWrapper::write_callback write_cb;
-	JackWrapper::read_callback read_cb;
+	write_callback_t write_cb;
+	read_callback_t read_cb;
 	JackWrapper::xrun_callback xrun_cb{[]() -> int {
 		return 0;
 	}};
+	Ringbuffer<jack_midi_data_t> in_buf{IN_BUF_SIZE};
+	Ringbuffer<MidiEvent> out_buf{OUT_BUF_SIZE};
 };
 
 JackWrapper::JackWrapper(const std::string& client_name) :
@@ -177,16 +240,6 @@ JackWrapper::JackWrapper(const std::string& client_name) :
 }
 
 JackWrapper::~JackWrapper() = default;
-
-void JackWrapper::set_write_callback(write_callback write_cb)
-{
-	p_impl->write_cb = std::move(write_cb);
-}
-
-void JackWrapper::set_read_callback(read_callback read_cb)
-{
-	p_impl->read_cb = std::move(read_cb);
-}
 
 void JackWrapper::set_xrun_callback(xrun_callback xrun_cb)
 {
@@ -211,4 +264,36 @@ void JackWrapper::deactivate()
 	int res = jack_deactivate(p_impl->client.get());
 	if (res != 0)
 		throw JackWrapperException{"Failed to deactivate JACK client"};
+}
+
+std::size_t JackWrapper::read_bufsize() const noexcept
+{
+	return p_impl->in_buf.size();
+}
+
+std::size_t JackWrapper::write_bufsize() const noexcept
+{
+	return p_impl->out_buf.size();
+}
+
+JackWrapper& JackWrapper::operator<<(const MidiEvent& event)
+{
+	assert(not p_impl->out_buf.full());
+	p_impl->out_buf.push(event);
+	return *this;
+}
+
+JackWrapper& JackWrapper::operator>>(MidiEvent& event)
+{
+	RingbufferReadIterator it{p_impl->in_buf.data()};
+	RingbufferReadIterator end{
+		p_impl->in_buf.data(), RingbufferReadIterator::end_iter
+	};
+
+	auto [parsed_event, next_it] = MidiEvent::parse(it, end);
+	jack_ringbuffer_read_advance(
+		p_impl->in_buf.data(), std::distance(it, next_it)
+	);
+	event = parsed_event;
+	return *this;
 }
