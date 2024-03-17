@@ -120,6 +120,11 @@ public:
 		return std::move(d);
 	}
 
+	jack_ringbuffer_t* data()
+	{
+		return buf.get();
+	}
+
 private:
 	void init_buf()
 	{
