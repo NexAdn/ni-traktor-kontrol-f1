@@ -14,6 +14,19 @@ using ButtonEvent = F1Device::InputEvent::ButtonEvent;
 using EncoderEvent = F1Device::InputEvent::EncoderEvent;
 using WheelEvent = F1Device::InputEvent::WheelEvent;
 
+namespace
+{
+template <typename OutType, typename InType>
+constexpr OutType
+// NOLINTNEXTLINE(*-easily-swappable-parameters)
+scale(const InType& value, const InType& in_max, const OutType& out_max)
+{
+	const double scale_factor =
+		static_cast<double>(out_max) / static_cast<double>(in_max);
+	return static_cast<OutType>(std::roundl(value * scale_factor));
+}
+} // namespace
+
 // NOLINTNEXTLINE(*-macro-usage)
 #define PROCESS_HID_INPUT(event, output, evt, ipt)                             \
 	{                                                                      \
@@ -29,7 +42,7 @@ using WheelEvent = F1Device::InputEvent::WheelEvent;
 	template <>                                                            \
 	std::optional<MidiEvent> IOMapper::process_HID_input_impl<evt, ipt>(   \
 		const F1Device::InputEvent& event,                             \
-		F1Device::OutputState& output                                  \
+		[[maybe_unused]] F1Device::OutputState& output                 \
 	)
 
 PROCESS_HID_INPUT_IMPL(EventType::BUTTON, InputType::MATRIX)
@@ -73,6 +86,33 @@ PROCESS_HID_INPUT_IMPL(EventType::BUTTON, InputType::STOP)
 	return midi_event;
 }
 
+PROCESS_HID_INPUT_IMPL(EventType::ENCODER, InputType::FADER)
+{
+	const auto& encoder = std::get<EncoderEvent>(event.data);
+	return process_HID_input_encoder(
+		encoder, controllers.faders, last_input.fader
+	);
+}
+
+PROCESS_HID_INPUT_IMPL(EventType::ENCODER, InputType::KNOB)
+{
+	const auto& encoder = std::get<EncoderEvent>(event.data);
+	return process_HID_input_encoder(
+		encoder, controllers.knobs, last_input.knob
+	);
+}
+
+PROCESS_HID_INPUT_IMPL(EventType::ENCODER, InputType::WHEEL)
+{
+	const auto& wheel = std::get<WheelEvent>(event.data);
+	return MidiEvent{
+		MidiEvent::Type::CONTROL_CHANGE,
+		channel,
+		controllers.wheel,
+		wheel.direction > 0 ? wheel_inc_value : wheel_dec_value
+	};
+}
+
 std::optional<MidiEvent> IOMapper::process_HID_input(
 	const F1Device::InputEvent& event, F1Device::OutputState& output
 )
@@ -81,18 +121,11 @@ std::optional<MidiEvent> IOMapper::process_HID_input(
 	PROCESS_HID_INPUT(event, output, EventType::BUTTON, InputType::SPECIAL);
 	PROCESS_HID_INPUT(event, output, EventType::BUTTON, InputType::STOP);
 
-	// PROCESS_HID_INPUT(event, output, EventType::ENCODER,
-	// InputType::FADER);
+	PROCESS_HID_INPUT(event, output, EventType::ENCODER, InputType::FADER);
+	PROCESS_HID_INPUT(event, output, EventType::ENCODER, InputType::KNOB);
 
-	// PROCESS_HID_INPUT(event, output, EventType::ENCODER,
-	// InputType::KNOB);
+	PROCESS_HID_INPUT(event, output, EventType::ENCODER, InputType::WHEEL);
 
-	// PROCESS_HID_INPUT(event, output, EventType::ENCODER,
-	// InputType::WHEEL);
-
-	// Really, we should never get here, but just in case, do
-	// nothing in prod
-	// assert(false);
 	return {};
 }
 
@@ -150,6 +183,29 @@ std::pair<std::optional<MidiEvent>, bool> IOMapper::process_HID_input_button(
 				: note_off_velocity
 		},
 		button.button_press};
+}
+
+template <std::size_t enc_size>
+std::optional<MidiEvent> IOMapper::process_HID_input_encoder(
+	const EncoderEvent& encoder,
+	const std::array<byte, enc_size>& controllers,
+	std::array<byte, F1Device::FADERS_NUM>& last_input
+)
+{
+	const byte idx = encoder.index;
+	const byte val =
+		scale<byte>(encoder.value, F1Device::FADERS_MAX, ENCODER_MAX);
+
+	if (val == last_input.at(idx))
+		return {};
+
+	last_input.at(idx) = val;
+	return MidiEvent{
+		MidiEvent::Type::CONTROL_CHANGE,
+		channel,
+		controllers.at(idx),
+		val
+	};
 }
 
 void IOMapper::button_light_matrix_HID(

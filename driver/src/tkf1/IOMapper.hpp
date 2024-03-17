@@ -2,6 +2,7 @@
 
 #include <array>
 #include <bitset>
+#include <cstdint>
 #include <optional>
 
 #include "io/MidiEvent.hpp"
@@ -20,6 +21,7 @@ public:
 	using byte = MidiEvent::byte;
 
 	constexpr static F1Device::ButtonColor WHITE = F1Device::WHITE;
+	constexpr static byte ENCODER_MAX{127U};
 
 	IOMapper() = default;
 	IOMapper(const IOMapper&) = default;
@@ -114,16 +116,21 @@ public:
 	} notes;
 	/**
 	 * Configuration of controller values to emit for encoders
-	 *
-	 * Two controllers are exposed for the wheel, one emitting an absolute
-	 * value, the other emitting only changes in the value.
 	 */
 	struct {
 		std::array<byte, F1Device::KNOBS_NUM> knobs{75, 76, 77, 78};
 		std::array<byte, F1Device::FADERS_NUM> faders{79, 80, 81, 82};
-		byte wheel_absolute{83};
-		byte wheel_diff{84};
+		byte wheel{83};
 	} controllers;
+
+	/**
+	 * Value emitted by the wheel for a counterclockwise turn
+	 */
+	byte wheel_dec_value{0x00};
+	/**
+	 * Value emitted by the wheel for a clockwise turn
+	 */
+	byte wheel_inc_value{0x7f};
 
 	/**
 	 * Control button brightness mode
@@ -241,6 +248,13 @@ private:
 		std::bitset<btn_size>& last_input
 	);
 
+	template <std::size_t enc_size>
+	std::optional<MidiEvent> process_HID_input_encoder(
+		const F1Device::InputEvent::EncoderEvent& encoder,
+		const std::array<byte, enc_size>& controllers,
+		std::array<byte, F1Device::FADERS_NUM>& last_input
+	);
+
 	void button_light_matrix_HID(
 		F1Device::OutputState& output, byte idx, bool on
 	);
@@ -254,5 +268,7 @@ private:
 		std::bitset<F1Device::MATRIX_BUTTONS_NUM> matrix{};
 		std::bitset<F1Device::SPECIAL_BUTTONS_NUM> special{};
 		std::bitset<F1Device::STOP_BUTTONS_NUM> stop{};
+		std::array<byte, F1Device::FADERS_NUM> fader{};
+		std::array<byte, F1Device::KNOBS_NUM> knob{};
 	} last_input;
 };
