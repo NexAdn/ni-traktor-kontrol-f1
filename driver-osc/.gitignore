@@ -1,3 +1,5 @@
+.cache/
+.nvimrc
 build/
 cmake-build-*
 doc/html
