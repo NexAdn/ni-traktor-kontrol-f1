@@ -93,7 +93,7 @@ public:
 
 		for (std::size_t i = 0; i < MATRIX_BUTTONS_NUM; i++) {
 			// F1 uses 7-bit BRG color
-			const auto& [r, g, b] = output_state.matrix_btns.at(i);
+			const auto& [b, r, g] = output_state.matrix_btns.at(i);
 			assert(r < MAX_BRIGHTNESS);
 			assert(g < MAX_BRIGHTNESS);
 			assert(b < MAX_BRIGHTNESS);
@@ -103,7 +103,8 @@ public:
 		}
 
 		for (std::size_t i = 0; i < STOP_BUTTONS_NUM; ++i) {
-			const auto& brightness = output_state.stop_btns.at(i);
+			const auto& brightness =
+				output_state.stop_btns.at(3 - i);
 			assert(brightness < MAX_BRIGHTNESS);
 			out_report.at(i * 2 + out_offsets::STOP1) = brightness;
 			out_report.at(i * 2 + out_offsets::STOP2) = brightness;

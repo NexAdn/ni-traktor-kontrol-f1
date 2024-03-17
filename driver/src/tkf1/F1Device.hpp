@@ -284,7 +284,10 @@ considers the top left button as (0, 0) and the bottom right button as (3, 3).
 	 * Convert 7-bit RGB values to the internal representation
 	 */
 	constexpr static ButtonColor
-	rgb2color(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+	rgb2color(Brightness r, Brightness g, Brightness b)
+	{
+		return std::make_tuple(b, r, g);
+	}
 
 private:
 	std::unique_ptr<Impl> p_impl;
