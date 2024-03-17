@@ -21,7 +21,7 @@ public:
 	using byte = MidiEvent::byte;
 
 	constexpr static F1Device::ButtonColor WHITE = F1Device::WHITE;
-	constexpr static byte ENCODER_MAX{127U};
+	constexpr static byte MIDI_MAX{127U};
 
 	IOMapper() = default;
 	IOMapper(const IOMapper&) = default;
@@ -118,9 +118,9 @@ public:
 	 * Configuration of controller values to emit for encoders
 	 */
 	struct {
-		std::array<byte, F1Device::KNOBS_NUM> knobs{75, 76, 77, 78};
-		std::array<byte, F1Device::FADERS_NUM> faders{79, 80, 81, 82};
-		byte wheel{83};
+		std::array<byte, F1Device::KNOBS_NUM> knobs{33, 34, 35, 36};
+		std::array<byte, F1Device::FADERS_NUM> faders{37, 38, 39, 40};
+		byte wheel{41};
 	} controllers;
 
 	/**
@@ -227,7 +227,8 @@ public:
 	F1Device::Brightness brightness_low{0x29};
 	F1Device::Brightness brightness_high{0x7f};
 
-	byte channel{0};
+	byte out_channel{0};
+	byte in_channel{1};
 	byte note_on_velocity{127};
 	byte note_off_velocity{0};
 	// NOLINTEND(*-magic-numbers,*-private-member-variables-in-classes)
@@ -253,6 +254,38 @@ private:
 		const F1Device::InputEvent::EncoderEvent& encoder,
 		const std::array<byte, enc_size>& controllers,
 		std::array<byte, F1Device::FADERS_NUM>& last_input
+	);
+
+	template <std::size_t btn_size>
+	bool process_MIDI_event_CC(
+		const MidiEvent& event,
+		std::array<byte, btn_size>& output,
+		std::size_t idx,
+		const std::array<byte, btn_size>& brightness_controllers
+	);
+
+	template <std::size_t btn_size>
+	bool process_MIDI_event_CC(
+		const MidiEvent& event,
+		std::array<F1Device::ButtonColor, btn_size>& output,
+		std::size_t idx,
+		const std::array<byte, btn_size>& brightness_controllers
+	);
+
+	template <std::size_t btn_size>
+	bool process_MIDI_event_note(
+		const MidiEvent& event,
+		std::array<byte, btn_size>& output,
+		std::size_t idx,
+		const std::array<byte, btn_size>& notes
+	);
+
+	template <std::size_t btn_size>
+	bool process_MIDI_event_note(
+		const MidiEvent& event,
+		std::array<F1Device::ButtonColor, btn_size>& output,
+		std::size_t idx,
+		const std::array<byte, btn_size>& notes
 	);
 
 	void button_light_matrix_HID(

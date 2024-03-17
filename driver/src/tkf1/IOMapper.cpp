@@ -1,8 +1,6 @@
 #include <cmath>
 #include <optional>
 
-#include <iostream>
-
 #include "IOMapper.hpp"
 #include "io/MidiEvent.hpp"
 #include "tkf1/F1Device.hpp"
@@ -23,7 +21,15 @@ scale(const InType& value, const InType& in_max, const OutType& out_max)
 {
 	const double scale_factor =
 		static_cast<double>(out_max) / static_cast<double>(in_max);
-	return static_cast<OutType>(std::roundl(value * scale_factor));
+	if constexpr (std::is_floating_point_v<OutType>) {
+		return static_cast<OutType>(
+			static_cast<double>(value) * scale_factor
+		);
+	} else {
+		return static_cast<OutType>(
+			std::roundl(static_cast<double>(value) * scale_factor)
+		);
+	}
 }
 } // namespace
 
@@ -65,7 +71,6 @@ PROCESS_HID_INPUT_IMPL(EventType::BUTTON, InputType::SPECIAL)
 		button, button_toggle.special, notes.special, last_input.special
 	);
 	if (midi_event) {
-		std::cout << "button: " << (button_on ? "on" : "off") << '\n';
 		button_light_special_HID(output, button.index, button_on);
 	}
 
@@ -79,7 +84,6 @@ PROCESS_HID_INPUT_IMPL(EventType::BUTTON, InputType::STOP)
 		button, button_toggle.stop, notes.stop, last_input.stop
 	);
 	if (midi_event) {
-		std::cout << "button: " << (button_on ? "on" : "off") << '\n';
 		button_light_stop_HID(output, button.index, button_on);
 	}
 
@@ -107,7 +111,7 @@ PROCESS_HID_INPUT_IMPL(EventType::ENCODER, InputType::WHEEL)
 	const auto& wheel = std::get<WheelEvent>(event.data);
 	return MidiEvent{
 		MidiEvent::Type::CONTROL_CHANGE,
-		channel,
+		out_channel,
 		controllers.wheel,
 		wheel.direction > 0 ? wheel_inc_value : wheel_dec_value
 	};
@@ -130,11 +134,41 @@ std::optional<MidiEvent> IOMapper::process_HID_input(
 }
 
 bool IOMapper::process_MIDI_event(
-	[[maybe_unused]] const MidiEvent& event,
-	[[maybe_unused]] F1Device::OutputState& output_state
+	const MidiEvent& event, F1Device::OutputState& output_state
 )
 {
-	return false;
+	if (event.channel != in_channel)
+		return false;
+
+	bool changed = false;
+	for (std::size_t i = 0; i < F1Device::MATRIX_BUTTONS_NUM; ++i) {
+		if (brightness_mode.matrix.at(i) != BrightnessMode::HID) {
+			switch (brightness_mode.matrix.at(i)) {
+			case BrightnessMode::MIDI_CC:
+				changed |= process_MIDI_event_CC(
+					event,
+					output_state.matrix_btns,
+					i,
+					brightness_controllers.matrix
+				);
+				break;
+
+			case BrightnessMode::MIDI_NOTE:
+				changed |= process_MIDI_event_note(
+					event,
+					output_state.matrix_btns,
+					i,
+					notes.matrix
+				);
+				break;
+
+			default:
+				assert(false);
+			}
+		}
+	}
+
+	return changed;
 }
 
 template <std::size_t btn_size>
@@ -156,7 +190,7 @@ std::pair<std::optional<MidiEvent>, bool> IOMapper::process_HID_input_button(
 
 		return {MidiEvent{
 				event_type,
-				channel,
+				out_channel,
 				notes.at(idx),
 				event_type == MidiEvent::Type::NOTE_ON
 					? note_on_velocity
@@ -176,7 +210,7 @@ std::pair<std::optional<MidiEvent>, bool> IOMapper::process_HID_input_button(
 	last_input[idx] = button.button_press;
 	return {MidiEvent{
 			event_type,
-			channel,
+			out_channel,
 			notes.at(idx),
 			event_type == MidiEvent::Type::NOTE_ON
 				? note_on_velocity
@@ -194,7 +228,7 @@ std::optional<MidiEvent> IOMapper::process_HID_input_encoder(
 {
 	const byte idx = encoder.index;
 	const byte val =
-		scale<byte>(encoder.value, F1Device::FADERS_MAX, ENCODER_MAX);
+		scale<byte>(encoder.value, F1Device::FADERS_MAX, MIDI_MAX);
 
 	if (val == last_input.at(idx))
 		return {};
@@ -202,10 +236,103 @@ std::optional<MidiEvent> IOMapper::process_HID_input_encoder(
 	last_input.at(idx) = val;
 	return MidiEvent{
 		MidiEvent::Type::CONTROL_CHANGE,
-		channel,
+		out_channel,
 		controllers.at(idx),
 		val
 	};
+}
+
+template <std::size_t btn_size>
+bool IOMapper::process_MIDI_event_CC(
+	const MidiEvent& event,
+	std::array<byte, btn_size>& output,
+	std::size_t idx,
+	const std::array<byte, btn_size>& brightness_controllers
+)
+{
+	if (event.type != MidiEvent::Type::CONTROL_CHANGE)
+		return false;
+	if (event.data.controller.controller != brightness_controllers.at(idx))
+		return false;
+
+	const auto b = scale<Brightness>(
+		event.data.controller.value, MIDI_MAX, F1Device::FULL_BRIGHTNESS
+	);
+	output.at(idx) = b;
+	return true;
+}
+
+template <std::size_t btn_size>
+bool IOMapper::process_MIDI_event_CC(
+	const MidiEvent& event,
+	std::array<F1Device::ButtonColor, btn_size>& output,
+	std::size_t idx,
+	const std::array<byte, btn_size>& brightness_controllers
+)
+{
+	if (event.type != MidiEvent::Type::CONTROL_CHANGE)
+		return false;
+	if (event.data.controller.controller != brightness_controllers.at(idx))
+		return false;
+
+	const auto brightness =
+		scale<double>(event.data.controller.value, MIDI_MAX, 1.0);
+	const auto& [o_r, o_g, o_b] =
+		F1Device::color2rgb(matrix_colors.at(idx));
+	const auto r = static_cast<Brightness>(brightness * o_r);
+	const auto g = static_cast<Brightness>(brightness * o_g);
+	const auto b = static_cast<Brightness>(brightness * o_b);
+
+	output.at(idx) = F1Device::rgb2color(r, g, b);
+	return true;
+}
+
+template <std::size_t btn_size>
+bool IOMapper::process_MIDI_event_note(
+	const MidiEvent& event,
+	std::array<byte, btn_size>& output,
+	std::size_t idx,
+	const std::array<byte, btn_size>& notes
+)
+{
+	if (event.type != MidiEvent::Type::NOTE_ON and
+	    event.type != MidiEvent::Type::NOTE_OFF)
+		return false;
+	if (event.data.note.note != notes.at(idx))
+		return false;
+
+	const auto b = event.type == MidiEvent::Type::NOTE_ON ? brightness_high
+							      : brightness_low;
+	output.at(idx) = b;
+	return true;
+}
+
+template <std::size_t btn_size>
+bool IOMapper::process_MIDI_event_note(
+	const MidiEvent& event,
+	std::array<F1Device::ButtonColor, btn_size>& output,
+	std::size_t idx,
+	const std::array<byte, btn_size>& notes
+)
+{
+	if (event.type != MidiEvent::Type::NOTE_ON and
+	    event.type != MidiEvent::Type::NOTE_OFF)
+		return false;
+	if (event.data.note.note != notes.at(idx))
+		return false;
+
+	const auto brightness = event.type == MidiEvent::Type::NOTE_ON
+					? brightness_high_color
+					: brightness_low_color;
+
+	const auto& [o_r, o_g, o_b] =
+		F1Device::color2rgb(matrix_colors.at(idx));
+	const auto r = static_cast<Brightness>(brightness * o_r);
+	const auto g = static_cast<Brightness>(brightness * o_g);
+	const auto b = static_cast<Brightness>(brightness * o_b);
+
+	output.at(idx) = F1Device::rgb2color(r, g, b);
+	return true;
 }
 
 void IOMapper::button_light_matrix_HID(
