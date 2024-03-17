@@ -90,7 +90,8 @@ public:
 		[[maybe_unused]] const std::size_t bytes_written =
 			jack_ringbuffer_write(
 				buf.get(),
-				reinterpret_cast<const char*>(&v), // NOLINT(*-reinterpret-cast)
+				// NOLINTNEXTLINE(*-reinterpret-cast)
+				reinterpret_cast<const char*>(&v),
 				sizeof(T)
 			);
 		assert(bytes_written == sizeof(T));
@@ -109,7 +110,8 @@ public:
 		[[maybe_unused]] const std::size_t bytes_read =
 			jack_ringbuffer_read(
 				buf.get(),
-				reinterpret_cast<char*>(&d), // NOLINT(*-reinterpret-cast)
+				// NOLINTNEXTLINE(*-reinterpret-cast)
+				reinterpret_cast<char*>(&d),
 				sizeof(T)
 			);
 		assert(bytes_read == sizeof(T));
