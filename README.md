@@ -36,7 +36,7 @@ The current driver implementation has support for dropping privileges (the drive
 
 ## License
 
-Copyright (C) 2020 Adrian Schollmeyer.
+Copyright (C) 2020-2024 Adrian Schollmeyer.
 
 This repository is licensed under the terms of the GNU General Public License Version 2 or later.
 A copy of the GPL can be found in [LICENSE.md](LICENSE.md).
