@@ -4,10 +4,8 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
-#include <optional>
 #include <ostream>
 #include <tuple>
-#include <vector>
 
 class MidiEvent final
 {
