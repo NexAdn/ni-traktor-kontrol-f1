@@ -84,6 +84,9 @@ public:
 	constexpr static Brightness DARK{0x00};
 	constexpr static Brightness FULL_BRIGHTNESS{0x7f};
 	constexpr static ButtonColor BLACK{DARK, DARK, DARK};
+	constexpr static ButtonColor WHITE{
+		FULL_BRIGHTNESS, FULL_BRIGHTNESS, FULL_BRIGHTNESS
+	};
 	constexpr static int16_t HID_VENDOR_ID{0x17cc};
 	constexpr static int16_t HID_PRODUCT_ID{0x1120};
 
