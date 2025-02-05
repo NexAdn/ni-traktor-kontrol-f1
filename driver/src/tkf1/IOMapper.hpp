@@ -2,7 +2,6 @@
 
 #include <array>
 #include <bitset>
-#include <cstdint>
 #include <optional>
 
 #include "io/MidiEvent.hpp"
