@@ -1,19 +1,14 @@
 src_include = include_directories('.')
 
-srcs = files([
-	'io/JackWrapper.cpp',
-	'io/HidDevice.cpp',
-	'io/MidiEvent.cpp',
-	'io/MidiStream.cpp',
-	'io/RingbufferIterator.cpp',
-	'tkf1/F1Device.cpp',
-	'tkf1/IOMapper.cpp',
-])
+subdir('io')
+subdir('tkf1')
 
 common_lib = static_library(
 	'tkf1-drv-common',
 	[
-		srcs,
+		common_io_srcs,
+		jack_srcs,
+		tkf1_srcs,
 	],
 	dependencies: [
 		jack_dep,
@@ -21,6 +16,19 @@ common_lib = static_library(
 	include_directories: [
 		src_include,
 	]
+)
+
+tkf1_lib = library(
+	'tkf1',
+	[
+		tkf1_srcs,
+	],
+	dependencies: [
+	],
+	include_directories: [
+		src_include,
+	],
+	version: '1.0.0',
 )
 
 exe = executable(
