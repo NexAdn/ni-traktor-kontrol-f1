@@ -1,1 +1,2 @@
+option('landlock', type: 'feature', value: 'enabled', description: 'Enable Landlock support')
 option('test', type: 'boolean', value: true, description: 'Enable tests')

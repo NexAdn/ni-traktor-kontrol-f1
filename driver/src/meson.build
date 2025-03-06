@@ -3,6 +3,11 @@ src_include = include_directories('.')
 subdir('io')
 subdir('tkf1')
 
+configure_file(
+	configuration: conf_data,
+	output: 'config.h',
+)
+
 common_lib = static_library(
 	'tkf1-drv-common',
 	[
@@ -31,6 +36,11 @@ tkf1_lib = library(
 	version: '1.0.0',
 )
 
+llpp_deps = []
+if get_option('landlock').enabled()
+	llpp_deps = [llpp_dep]
+endif
+
 exe = executable(
 	'tkf1-drv',
 	[
@@ -38,7 +48,7 @@ exe = executable(
 	],
 	dependencies: [
 		jack_dep,
-	],
+	] + llpp_deps,
 	link_with: [
 		common_lib,
 	],

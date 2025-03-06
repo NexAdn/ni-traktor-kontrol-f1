@@ -10,9 +10,12 @@ project(
 	]
 )
 
+llpp_dep = dependency('landlockpp', required: get_option('landlock').enabled())
+
 conf_data = configuration_data({
-	'name': meson.project_name(),
-	'version': meson.project_version()
+	'TKF1_NAME': meson.project_name(),
+	'TKF1_VERSION': meson.project_version(),
+	'TKF1_HAVE_LANDLOCK': get_option('landlock').enabled(),
 })
 
 jack_dep = dependency('jack', required: true)
